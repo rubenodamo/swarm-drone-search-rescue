@@ -1,0 +1,114 @@
+import pytest
+
+from src.agents.base_drone import DroneAgent
+from src.environment.grid import CellType, Survivor
+from src.model.disaster_model import DisasterModel
+
+
+class _ConcreteDrone(DroneAgent):
+    """Concrete drone subclass for testing base class methods."""
+
+    def step(self) -> None:
+        self.detect_survivors()
+
+
+def _make_model(seed: int = 42) -> DisasterModel:
+    return DisasterModel(
+        strategy="random", swarm_size=0, hazard_rate="medium", seed=seed
+    )
+
+
+def _place_drone(
+    model: DisasterModel, pos: tuple[int, int]
+) -> _ConcreteDrone:
+    model.disaster_grid.grid_state[pos] = CellType.PASSABLE
+    drone = _ConcreteDrone(model)
+    model.disaster_grid.grid.place_agent(drone, pos)
+    return drone
+
+
+class TestGetLocalObservation:
+    """Tests for DroneAgent.get_local_observation()."""
+
+    def test_returns_cells_within_manhattan_distance_2(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        obs = drone.get_local_observation()
+        assert (5, 5) in obs
+        assert (5, 7) in obs
+        assert (7, 5) in obs
+        assert (6, 6) in obs
+
+    def test_excludes_cells_outside_radius(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        obs = drone.get_local_observation()
+        assert (5, 8) not in obs
+        assert (8, 5) not in obs
+        assert (7, 7) not in obs
+
+    def test_observation_count_at_interior_position(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        obs = drone.get_local_observation()
+        assert len(obs) == 13
+
+
+class TestSurvivorDetection:
+    """Tests for DroneAgent.detect_survivors()."""
+
+    def test_survivor_within_radius_is_found(self):
+        model = _make_model()
+        model.disaster_grid.survivors = [Survivor(pos=(7, 5))]
+        drone = _place_drone(model, (5, 5))
+        drone.step()
+        assert model.disaster_grid.survivors[0].found is True
+        assert model.survivors_found_count == 1
+
+    def test_survivor_outside_radius_not_found(self):
+        model = _make_model()
+        model.disaster_grid.survivors = [Survivor(pos=(10, 5))]
+        drone = _place_drone(model, (5, 5))
+        drone.step()
+        assert model.disaster_grid.survivors[0].found is False
+        assert model.survivors_found_count == 0
+
+    def test_already_found_survivor_not_double_counted(self):
+        model = _make_model()
+        model.disaster_grid.survivors = [Survivor(pos=(5, 5), found=True)]
+        drone = _place_drone(model, (5, 5))
+        drone.step()
+        assert model.survivors_found_count == 0
+
+
+class TestMoveTo:
+    """Tests for DroneAgent.move_to()."""
+
+    def test_move_to_updates_position(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        model.disaster_grid.grid_state[5, 6] = CellType.PASSABLE
+        drone.move_to((5, 6))
+        assert drone.pos == (5, 6)
+
+    def test_move_to_marks_cell_visited(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        model.disaster_grid.grid_state[5, 6] = CellType.PASSABLE
+        drone.move_to((5, 6))
+        assert (5, 6) in drone.visited_cells
+        assert model.coverage_grid[5, 6] == 1
+
+    def test_move_to_obstacle_raises(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        model.disaster_grid.grid_state[5, 6] = CellType.OBSTACLE
+        with pytest.raises(ValueError):
+            drone.move_to((5, 6))
+
+    def test_move_to_fire_raises(self):
+        model = _make_model()
+        drone = _place_drone(model, (5, 5))
+        model.disaster_grid.grid_state[5, 6] = CellType.FIRE
+        with pytest.raises(ValueError):
+            drone.move_to((5, 6))
