@@ -14,7 +14,6 @@ class CellType(IntEnum):
         - OBSTACLE: Impassable cell representing walls or debris.
         - FIRE: Cell currently on fire, which agents must avoid.
     """
-
     PASSABLE = 0
     OBSTACLE = 1
     FIRE = 2
@@ -29,7 +28,6 @@ class Survivor:
         - pos: The (x, y) coordinates of the survivor on the grid.
         - found: Whether the survivor has been located by an agent.
     """
-
     pos: tuple[int, int]
     found: bool = False
 
@@ -45,7 +43,6 @@ class DisasterGrid:
         - grid_state: A 2D numpy array storing each cell's CellType.
         - survivors: A list of Survivor objects placed in the environment.
     """
-
     MAX_FIRE_FRACTION = 0.60
 
     def __init__(self, width: int, height: int, seed: int) -> None:
@@ -73,7 +70,6 @@ class DisasterGrid:
         Args:
             - n: The number of obstacle cells to place.
         """
-
         all_cells = [
             (x, y)
             for x in range(self.width)
@@ -134,7 +130,6 @@ class DisasterGrid:
             - p: Probability that fire spreads to each adjacent passable
               cell.
         """
-
         passable_count = (self.grid_state != CellType.OBSTACLE).sum()
         fire_count = (self.grid_state == CellType.FIRE).sum()
         if (
@@ -169,7 +164,6 @@ class DisasterGrid:
         Returns:
             - List of (x, y) coordinates of passable neighbouring cells.
         """
-
         x, y = pos
         result = []
 
