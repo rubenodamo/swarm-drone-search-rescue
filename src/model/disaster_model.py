@@ -57,6 +57,7 @@ class DisasterModel(mesa.Model):
         """
         super().__init__(rng=seed)
         self.rng = np.random.default_rng(seed)
+        self.seed = seed
         self.strategy = strategy
         self.swarm_size = swarm_size
         self.hazard_rate = hazard_rate
