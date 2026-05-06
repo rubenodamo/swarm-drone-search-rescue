@@ -221,3 +221,6 @@ __marimo__/
 # Notes
 notes/
 CLAUDE.md
+
+# Experiment raw outputs (re-generatable; commit all_runs.csv instead)
+results/raw/
