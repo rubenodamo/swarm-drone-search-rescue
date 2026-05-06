@@ -1,5 +1,6 @@
 import pytest
 
+from src.agents.astar_drone import AStarDrone
 from src.agents.base_drone import DroneAgent
 from src.agents.random_drone import RandomDrone
 from src.environment.grid import CellType, Survivor
@@ -140,3 +141,69 @@ class TestRandomDrone:
             for agent in model.agents:
                 cell_type = model.disaster_grid.grid_state[agent.pos]
                 assert cell_type not in (CellType.OBSTACLE, CellType.FIRE)
+
+
+def _place_astar_drone(
+    model: DisasterModel, pos: tuple[int, int]
+) -> AStarDrone:
+    model.disaster_grid.grid_state[pos] = CellType.PASSABLE
+    drone = AStarDrone(model)
+    model.disaster_grid.grid.place_agent(drone, pos)
+    return drone
+
+
+class TestAStarDrone:
+    """Tests for AStarDrone.step()."""
+
+    def test_agent_moves_to_frontier_in_open_grid(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        drone = _place_astar_drone(model, (0, 0))
+        drone.visited_cells = {(0, 0)}
+
+        drone.step()
+
+        assert drone.pos != (0, 0)
+        assert model.disaster_grid.grid_state[drone.pos] == CellType.PASSABLE
+
+    def test_agent_replans_when_fire_appears_on_path(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        drone = _place_astar_drone(model, (0, 0))
+        drone.visited_cells = {(0, 0)}
+
+        drone._replan()
+        assert len(drone.current_path) > 0
+
+        next_step = drone.current_path[0]
+        model.disaster_grid.grid_state[next_step] = CellType.FIRE
+
+        drone.step()
+
+        assert drone.pos != next_step
+        assert model.disaster_grid.grid_state[drone.pos] != CellType.FIRE
+
+    def test_agent_never_moves_to_obstacle_or_fire(self):
+        model = DisasterModel(
+            strategy="astar", swarm_size=1, hazard_rate="slow", seed=0
+        )
+        for _ in range(20):
+            model.step()
+            for agent in model.agents:
+                cell_type = model.disaster_grid.grid_state[agent.pos]
+                assert cell_type not in (CellType.OBSTACLE, CellType.FIRE)
+
+    def test_trajectory_is_reproducible_with_same_seed(self):
+        def _run(seed: int) -> list[tuple[int, int]]:
+            model = DisasterModel(
+                strategy="astar", swarm_size=1, hazard_rate="slow", seed=seed
+            )
+            positions = []
+            for _ in range(10):
+                model.step()
+                agents = list(model.agents)
+                if agents:
+                    positions.append(agents[0].pos)
+            return positions
+
+        assert _run(0) == _run(0)
