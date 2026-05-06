@@ -151,3 +151,21 @@ class TestTermination:
         model.timestep = 200
         model.survivors_found_count = len(model.disaster_grid.survivors)
         assert model.termination_reason == "survivors"
+
+
+class TestRandomStrategySmoke:
+    """Tests for DisasterModel full run with random strategy."""
+
+    def test_run_completes_and_metrics_in_valid_range(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        while not model.is_done:
+            model.step()
+        print(
+            f"Seed=0 | Strategy=random | "
+            f"Survivors={model.survivors_found_count}/10 | "
+            f"Agents lost={model.agents_lost} | Steps={model.timestep}"
+        )
+        assert 0 <= model.survivors_found_count <= 10
+        assert 0 <= model.agents_lost <= 6

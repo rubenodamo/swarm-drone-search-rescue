@@ -1,6 +1,7 @@
 import pytest
 
 from src.agents.base_drone import DroneAgent
+from src.agents.random_drone import RandomDrone
 from src.environment.grid import CellType, Survivor
 from src.model.disaster_model import DisasterModel
 
@@ -110,3 +111,32 @@ class TestMoveTo:
         model.disaster_grid.grid_state[5, 6] = CellType.FIRE
         with pytest.raises(ValueError):
             drone.move_to((5, 6))
+
+
+class TestRandomDrone:
+    """Tests for RandomDrone.step()."""
+
+    def test_trajectory_is_reproducible_with_same_seed(self):
+        def _run(seed: int) -> list[tuple[int, int]]:
+            model = DisasterModel(
+                strategy="random", swarm_size=1, hazard_rate="slow", seed=seed
+            )
+            positions = []
+            for _ in range(10):
+                model.step()
+                agents = list(model.agents)
+                if agents:
+                    positions.append(agents[0].pos)
+            return positions
+
+        assert _run(0) == _run(0)
+
+    def test_agent_never_moves_to_obstacle_or_fire(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=1, hazard_rate="slow", seed=0
+        )
+        for _ in range(20):
+            model.step()
+            for agent in model.agents:
+                cell_type = model.disaster_grid.grid_state[agent.pos]
+                assert cell_type not in (CellType.OBSTACLE, CellType.FIRE)
