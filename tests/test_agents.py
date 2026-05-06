@@ -18,9 +18,7 @@ def _make_model(seed: int = 42) -> DisasterModel:
     )
 
 
-def _place_drone(
-    model: DisasterModel, pos: tuple[int, int]
-) -> _ConcreteDrone:
+def _place_drone(model: DisasterModel, pos: tuple[int, int]) -> _ConcreteDrone:
     model.disaster_grid.grid_state[pos] = CellType.PASSABLE
     drone = _ConcreteDrone(model)
     model.disaster_grid.grid.place_agent(drone, pos)
