@@ -12,5 +12,10 @@ class RandomDrone(DroneAgent):
 
     def step(self) -> None:
         """
-        Executes one simulation step (stub — implemented in Phase 5).
+        Moves to a random passable, non-fire neighbour and detects survivors.
         """
+        neighbours = self.get_passable_neighbours(self.pos)
+        if neighbours:
+            new_pos = tuple(int(c) for c in self.model.rng.choice(neighbours))
+            self.move_to(new_pos)
+        self.detect_survivors()
