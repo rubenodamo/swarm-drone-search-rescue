@@ -20,7 +20,10 @@ EXPECTED_KEYS = {
 
 def _run_model(strategy="random", swarm_size=3, seed=0, steps=10):
     model = DisasterModel(
-        strategy=strategy, swarm_size=swarm_size, hazard_rate="medium", seed=seed
+        strategy=strategy,
+        swarm_size=swarm_size,
+        hazard_rate="medium",
+        seed=seed,
     )
     for _ in range(steps):
         model.step()
