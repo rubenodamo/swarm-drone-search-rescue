@@ -1,12 +1,21 @@
 import mesa
 import numpy as np
 
+from src.agents.astar_drone import AStarDrone
+from src.agents.pheromone_drone import PheromoneDrone
+from src.agents.random_drone import RandomDrone
 from src.environment.grid import CellType, DisasterGrid
 
 HAZARD_RATES: dict[str, float] = {
     "slow": 0.05,
     "medium": 0.20,
     "fast": 0.40,
+}
+
+_STRATEGY_MAP: dict[str, type] = {
+    "random": RandomDrone,
+    "astar": AStarDrone,
+    "pheromone": PheromoneDrone,
 }
 
 
@@ -65,9 +74,51 @@ class DisasterModel(mesa.Model):
         self.survivors_found_count: int = 0
         self.timestep: int = 0
 
+        agent_class = _STRATEGY_MAP[strategy]
+        for _ in range(swarm_size):
+            agent = agent_class(self)
+            self.disaster_grid.grid.place_agent(agent, (0, 0))
+
+    @property
+    def is_done(self) -> bool:
+        """
+        Returns True when the simulation run has reached a terminal state.
+
+        Returns:
+            - True if all survivors found, all agents dead, or timestep >= 200.
+        """
+        total_survivors = len(self.disaster_grid.survivors)
+        all_found = self.survivors_found_count >= total_survivors
+        all_dead = self.swarm_size > 0 and len(list(self.agents)) == 0
+        timed_out = self.timestep >= 200
+        return all_found or all_dead or timed_out
+
+    @property
+    def termination_reason(self) -> str:
+        """
+        Returns the reason the simulation ended, or empty string if running.
+
+        Returns:
+            - 'survivors', 'agents_dead', 'timeout', or '' if not done.
+        """
+        if not self.is_done:
+            return ""
+        total_survivors = len(self.disaster_grid.survivors)
+        if self.survivors_found_count >= total_survivors:
+            return "survivors"
+        if self.swarm_size > 0 and len(list(self.agents)) == 0:
+            return "agents_dead"
+        return "timeout"
+
+    def evaporate_pheromones(self) -> None:
+        """
+        Decays all pheromone values by the evaporation factor each step.
+        """
+        self.pheromone_grid *= 0.95
+
     def check_agent_deaths(self) -> None:
         """
-        Remove any agents whose current cell is on fire and increment agents_lost.
+        Remove agents on fire cells and increment agents_lost.
         """
         to_remove = [
             agent
@@ -87,4 +138,5 @@ class DisasterModel(mesa.Model):
         self.agents.shuffle_do("step")
         self.disaster_grid.spread_fire(self._hazard_p)
         self.check_agent_deaths()
+        self.evaporate_pheromones()
         self.timestep += 1

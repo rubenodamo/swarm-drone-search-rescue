@@ -74,3 +74,80 @@ class TestAgentDeaths:
         assert model.timestep == 0
         model.step()
         assert model.timestep == 1
+
+
+class TestDisasterModelInit:
+    """Tests for DisasterModel.__init__() agent placement."""
+
+    def test_agent_count_matches_swarm_size(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        assert len(list(model.agents)) == 6
+
+    def test_step_runs_without_error(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        for _ in range(10):
+            model.step()
+
+    def test_agents_placed_at_origin(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=3, hazard_rate="slow", seed=1
+        )
+        for agent in model.agents:
+            assert agent.pos == (0, 0)
+
+    def test_pheromone_evaporation_called_in_step(self):
+        model = DisasterModel(
+            strategy="pheromone", swarm_size=1, hazard_rate="slow", seed=0
+        )
+        model.pheromone_grid[5, 5] = 1.0
+        model.step()
+        assert model.pheromone_grid[5, 5] == pytest.approx(0.95)
+
+
+class TestTermination:
+    """Tests for DisasterModel.is_done and termination_reason."""
+
+    def test_not_done_at_start(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        assert model.is_done is False
+        assert model.termination_reason == ""
+
+    def test_done_when_all_survivors_found(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        model.survivors_found_count = len(model.disaster_grid.survivors)
+        assert model.is_done is True
+        assert model.termination_reason == "survivors"
+
+    def test_done_when_all_agents_dead(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        for agent in list(model.agents):
+            model.disaster_grid.grid.remove_agent(agent)
+            agent.remove()
+        assert model.is_done is True
+        assert model.termination_reason == "agents_dead"
+
+    def test_done_when_timestep_200(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        model.timestep = 200
+        assert model.is_done is True
+        assert model.termination_reason == "timeout"
+
+    def test_survivors_reason_takes_priority_over_timeout(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        model.timestep = 200
+        model.survivors_found_count = len(model.disaster_grid.survivors)
+        assert model.termination_reason == "survivors"
