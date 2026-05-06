@@ -12,5 +12,17 @@ class PheromoneDrone(DroneAgent):
 
     def step(self) -> None:
         """
-        Executes one simulation step (stub — implemented in Phase 7).
+        Executes one simulation step for the pheromone drone.
         """
+        self.model.pheromone_grid[self.pos] += 1.0
+
+        neighbours = self.get_passable_neighbours(self.pos)
+        if neighbours:
+            min_val = min(self.model.pheromone_grid[n] for n in neighbours)
+            candidates = [
+                n for n in neighbours if self.model.pheromone_grid[n] == min_val
+            ]
+            chosen = candidates[self.model.rng.integers(0, len(candidates))]
+            self.move_to(chosen)
+
+        self.detect_survivors()

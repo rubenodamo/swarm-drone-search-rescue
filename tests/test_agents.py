@@ -2,6 +2,7 @@ import pytest
 
 from src.agents.astar_drone import AStarDrone
 from src.agents.base_drone import DroneAgent
+from src.agents.pheromone_drone import PheromoneDrone
 from src.agents.random_drone import RandomDrone
 from src.environment.grid import CellType, Survivor
 from src.model.disaster_model import DisasterModel
@@ -197,6 +198,57 @@ class TestAStarDrone:
         def _run(seed: int) -> list[tuple[int, int]]:
             model = DisasterModel(
                 strategy="astar", swarm_size=1, hazard_rate="slow", seed=seed
+            )
+            positions = []
+            for _ in range(10):
+                model.step()
+                agents = list(model.agents)
+                if agents:
+                    positions.append(agents[0].pos)
+            return positions
+
+        assert _run(0) == _run(0)
+
+
+def _place_pheromone_drone(
+    model: DisasterModel, pos: tuple[int, int]
+) -> PheromoneDrone:
+    model.disaster_grid.grid_state[pos] = CellType.PASSABLE
+    drone = PheromoneDrone(model)
+    model.disaster_grid.grid.place_agent(drone, pos)
+    return drone
+
+
+class TestPheromoneDrone:
+    """Tests for PheromoneDrone.step()."""
+
+    def test_agent_avoids_high_pheromone_neighbour(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        drone = _place_pheromone_drone(model, (5, 5))
+
+        model.pheromone_grid[5, 6] = 5.0
+
+        for _ in range(10):
+            drone.step()
+            assert drone.pos != (5, 6), "drone moved to high-pheromone cell"
+
+    def test_agent_deposits_pheromone_on_current_cell(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        drone = _place_pheromone_drone(model, (5, 5))
+
+        drone.step()
+
+        assert model.pheromone_grid[5, 5] >= 1.0
+
+    def test_trajectory_is_reproducible_with_same_seed(self):
+        def _run(seed: int) -> list[tuple[int, int]]:
+            model = DisasterModel(
+                strategy="pheromone",
+                swarm_size=1,
+                hazard_rate="slow",
+                seed=seed,
             )
             positions = []
             for _ in range(10):

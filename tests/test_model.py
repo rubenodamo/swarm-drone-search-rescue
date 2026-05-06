@@ -153,6 +153,66 @@ class TestTermination:
         assert model.termination_reason == "survivors"
 
 
+class TestPheromoneGrid:
+    """Tests for DisasterModel pheromone grid initialisation and evaporation."""
+
+    def test_pheromone_grid_initialised_to_zeros(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=0, hazard_rate="medium", seed=0
+        )
+        import numpy as np
+
+        assert model.pheromone_grid.shape == (20, 20)
+        assert np.all(model.pheromone_grid == 0.0)
+
+    def test_pheromone_decays_to_approx_point36_after_20_steps(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=0, hazard_rate="slow", seed=0
+        )
+        model.pheromone_grid[10, 10] = 1.0
+        for _ in range(20):
+            model.evaporate_pheromones()
+        assert model.pheromone_grid[10, 10] == pytest.approx(0.95**20, abs=1e-6)
+
+    def test_pheromone_values_never_go_negative(self):
+        model = DisasterModel(
+            strategy="random", swarm_size=0, hazard_rate="slow", seed=0
+        )
+        model.pheromone_grid[5, 5] = 0.001
+        for _ in range(100):
+            model.evaporate_pheromones()
+        assert model.pheromone_grid[5, 5] >= 0.0
+
+
+class TestPheromoneStrategySmoke:
+    """Tests for DisasterModel full run with pheromone strategy."""
+
+    def test_run_completes_without_error(self):
+        model = DisasterModel(
+            strategy="pheromone", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        while not model.is_done:
+            model.step()
+        assert 0 <= model.survivors_found_count <= 10
+        assert 0 <= model.agents_lost <= 6
+
+    def test_pheromone_grid_has_nonzero_values_after_run(self):
+        model = DisasterModel(
+            strategy="pheromone", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        while not model.is_done:
+            model.step()
+        assert model.pheromone_grid.max() > 0.0
+
+    def test_agents_visited_distinct_cells(self):
+        model = DisasterModel(
+            strategy="pheromone", swarm_size=6, hazard_rate="medium", seed=0
+        )
+        while not model.is_done:
+            model.step()
+        assert model.coverage_grid.sum() > 6
+
+
 class TestRandomStrategySmoke:
     """Tests for DisasterModel full run with random strategy."""
 
