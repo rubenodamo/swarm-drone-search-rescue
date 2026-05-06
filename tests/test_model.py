@@ -1,3 +1,5 @@
+import time
+
 import mesa
 import pytest
 
@@ -211,6 +213,20 @@ class TestPheromoneStrategySmoke:
         while not model.is_done:
             model.step()
         assert model.coverage_grid.sum() > 6
+
+
+class TestSingleRunTiming:
+    """Tests for single worst-case run timing benchmark."""
+
+    def test_worst_case_run_under_3_seconds(self):
+        model = DisasterModel(
+            strategy="astar", swarm_size=12, hazard_rate="fast", seed=0
+        )
+        start = time.perf_counter()
+        while not model.is_done:
+            model.step()
+        elapsed = time.perf_counter() - start
+        assert elapsed < 3.0, f"Run took {elapsed:.2f}s, expected < 3s"
 
 
 class TestRandomStrategySmoke:
