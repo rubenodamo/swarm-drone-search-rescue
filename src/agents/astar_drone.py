@@ -33,7 +33,9 @@ class AStarDrone(DroneAgent):
         passable_mask = grid_state != CellType.OBSTACLE.value
         fire_mask = grid_state == CellType.FIRE.value
 
-        frontier = get_nearest_frontier(self.pos, self.visited_cells, grid_state)
+        frontier = get_nearest_frontier(
+            self.pos, self.visited_cells, grid_state
+        )
         if frontier is None:
             self.current_path = []
             self.current_target = None
@@ -54,7 +56,10 @@ class AStarDrone(DroneAgent):
         """
         grid_state = self.model.disaster_grid.grid_state
 
-        if not self.current_path or grid_state[self.current_path[0]] == CellType.FIRE.value:
+        if (
+            not self.current_path
+            or grid_state[self.current_path[0]] == CellType.FIRE.value
+        ):
             self._replan()
 
         if self.current_path:
@@ -63,7 +68,9 @@ class AStarDrone(DroneAgent):
         else:
             neighbours = self.get_passable_neighbours(self.pos)
             if neighbours:
-                new_pos = tuple(int(c) for c in self.model.rng.choice(neighbours))
+                new_pos = tuple(
+                    int(c) for c in self.model.rng.choice(neighbours)
+                )
                 self.move_to(new_pos)
 
         self.detect_survivors()
