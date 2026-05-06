@@ -1,3 +1,6 @@
+import csv
+from pathlib import Path
+
 import numpy as np
 
 from src.environment.grid import CellType
@@ -53,3 +56,20 @@ class MetricsCollector:
             "duplicate_visits": duplicate_visits,
             "timesteps_run": model.timestep,
         }
+
+
+def write_csv(summary: dict, path: Path) -> None:
+    """
+    Writes a summary dict as a single CSV row to path.
+
+    Args:
+        - summary: Dict produced by MetricsCollector.get_summary().
+        - path: Destination file path; created with headers if absent,
+                otherwise the row is appended.
+    """
+    write_header = not path.exists()
+    with open(path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(summary.keys()))
+        if write_header:
+            writer.writeheader()
+        writer.writerow(summary)

@@ -1,6 +1,8 @@
+import csv
+
 import pytest
 
-from src.metrics.collector import MetricsCollector
+from src.metrics.collector import MetricsCollector, write_csv
 from src.model.disaster_model import DisasterModel
 
 EXPECTED_KEYS = {
@@ -65,3 +67,43 @@ class TestMetricsCollector:
         model = _run_model(steps=10)
         summary = MetricsCollector(model).get_summary()
         assert summary["coverage_pct"] > 0
+
+
+class TestWriteCsv:
+    """Tests for write_csv()."""
+
+    def test_csv_written_with_correct_values(self, tmp_path):
+        path = tmp_path / "out.csv"
+        model = _run_model()
+        summary = MetricsCollector(model).get_summary()
+        write_csv(summary, path)
+        with open(path, newline="") as f:
+            rows = list(csv.DictReader(f))
+        assert len(rows) == 1
+        assert rows[0]["strategy"] == summary["strategy"]
+        assert float(rows[0]["coverage_pct"]) == pytest.approx(
+            summary["coverage_pct"]
+        )
+
+    def test_headers_present_exactly_once_after_two_writes(self, tmp_path):
+        path = tmp_path / "out.csv"
+        model = _run_model()
+        summary = MetricsCollector(model).get_summary()
+        write_csv(summary, path)
+        write_csv(summary, path)
+        with open(path, newline="") as f:
+            lines = f.readlines()
+        header_lines = [l for l in lines if l.startswith("strategy")]
+        assert len(header_lines) == 1
+
+    def test_second_write_appends_row(self, tmp_path):
+        path = tmp_path / "out.csv"
+        model_a = _run_model(seed=0)
+        model_b = _run_model(seed=1)
+        write_csv(MetricsCollector(model_a).get_summary(), path)
+        write_csv(MetricsCollector(model_b).get_summary(), path)
+        with open(path, newline="") as f:
+            rows = list(csv.DictReader(f))
+        assert len(rows) == 2
+        assert rows[0]["seed"] == "0"
+        assert rows[1]["seed"] == "1"
