@@ -64,7 +64,10 @@ class TestGetNearestFrontier:
     """Tests for get_nearest_frontier()."""
 
     def _make_grid_state(
-        self, width: int, height: int, obstacles: list[tuple[int, int]] | None = None
+        self,
+        width: int,
+        height: int,
+        obstacles: list[tuple[int, int]] | None = None,
     ) -> np.ndarray:
         from src.environment.grid import CellType
 
