@@ -63,6 +63,11 @@ class PlaygroundApp:
         self._seed_var = tk.IntVar(value=0)
         self._speed_var = tk.IntVar(value=1)
 
+        self._metric_timestep = tk.StringVar(value="0")
+        self._metric_survivors = tk.StringVar(value="0 / 10")
+        self._metric_agents = tk.StringVar(value="0 / 0")
+        self._metric_status = tk.StringVar(value="Running")
+
         self.model = DisasterModel(
             strategy="random",
             swarm_size=6,
@@ -77,6 +82,7 @@ class PlaygroundApp:
 
         self.running = True
         self._update_play_pause_label()
+        self._update_metrics()
         self._schedule_sim()
         self._render_loop()
 
@@ -109,7 +115,7 @@ class PlaygroundApp:
             row=4, column=1, sticky="ew", pady=2)
 
         controls = tk.LabelFrame(panel, text="Controls", padx=6, pady=6)
-        controls.pack(fill=tk.X)
+        controls.pack(fill=tk.X, pady=(0, 8))
 
         self._play_pause_btn = tk.Button(
             controls, text="Pause", width=12, command=self._toggle_running)
@@ -119,6 +125,20 @@ class PlaygroundApp:
                   command=self._step_once).pack(fill=tk.X, pady=2)
         tk.Button(controls, text="Reset", width=12,
                   command=self._reset).pack(fill=tk.X, pady=2)
+
+        metrics = tk.LabelFrame(panel, text="Metrics", padx=6, pady=6)
+        metrics.pack(fill=tk.X)
+
+        for row, (label, var) in enumerate([
+            ("Timestep", self._metric_timestep),
+            ("Survivors", self._metric_survivors),
+            ("Agents alive", self._metric_agents),
+            ("Status", self._metric_status),
+        ]):
+            tk.Label(metrics, text=label, anchor="w").grid(
+                row=row, column=0, sticky="w", pady=1)
+            tk.Label(metrics, textvariable=var, anchor="w").grid(
+                row=row, column=1, sticky="w", padx=(6, 0), pady=1)
 
     def _add_option_row(
         self,
@@ -299,6 +319,8 @@ class PlaygroundApp:
             self.running = False
             self._update_play_pause_label()
 
+        self._update_metrics()
+
     def _update_pheromone_overlay(self) -> None:
         """
         Blend passable cell colours toward purple based on pheromone intensity.
@@ -349,10 +371,29 @@ class PlaygroundApp:
         self._update_pheromone_overlay()
         self.root.after(16, self._render_loop)
 
+    def _update_metrics(self) -> None:
+        """Refresh the live metrics StringVars from current model state."""
+        m = self.model
+        total_survivors = len(m.disaster_grid.survivors)
+        agents_alive = len(list(m.agents))
+
+        self._metric_timestep.set(str(m.timestep))
+        self._metric_survivors.set(f"{m.survivors_found_count} / {total_survivors}")
+        self._metric_agents.set(f"{agents_alive} / {m.swarm_size}")
+
+        if m.is_done:
+            status = "Complete"
+        elif self.running:
+            status = "Running"
+        else:
+            status = "Paused"
+        self._metric_status.set(status)
+
     def _toggle_running(self) -> None:
         """Toggle the simulation loop and update the Play/Pause button label."""
         self.running = not self.running
         self._update_play_pause_label()
+        self._update_metrics()
         if self.running:
             self._schedule_sim()
 
@@ -387,6 +428,7 @@ class PlaygroundApp:
 
         self.running = True
         self._update_play_pause_label()
+        self._update_metrics()
         self._schedule_sim()
 
     def _on_speed_change(self, _value: str) -> None:
