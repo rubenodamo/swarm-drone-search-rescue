@@ -33,9 +33,10 @@ class AStarDrone(DroneAgent):
         passable_mask = grid_state != CellType.OBSTACLE.value
         fire_mask = grid_state == CellType.FIRE.value
 
-        frontier = get_nearest_frontier(
-            self.pos, self.visited_cells, grid_state
-        )
+        covered = set(zip(*np.where(self.model.coverage_grid > 0)))
+        covered.add(self.pos)
+
+        frontier = get_nearest_frontier(self.pos, covered, grid_state)
         if frontier is None:
             self.current_path = []
             self.current_target = None
