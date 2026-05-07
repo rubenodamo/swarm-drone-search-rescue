@@ -24,6 +24,9 @@ STRATEGY_COLOURS: dict[str, str] = {
     "pheromone": "#2ca02c",
 }
 
+_PASSABLE_RGB: tuple[int, int, int] = (0xF0, 0xF0, 0xF0)
+_PHEROMONE_RGB: tuple[int, int, int] = (0x7B, 0x2D, 0x8B)
+
 
 class PlaygroundApp:
     """
@@ -296,8 +299,38 @@ class PlaygroundApp:
             self.running = False
             self._update_play_pause_label()
 
+    def _update_pheromone_overlay(self) -> None:
+        """
+        Blend passable cell colours toward purple based on pheromone intensity.
+        Only active when strategy is pheromone; skips cells with zero pheromone.
+        """
+        if self.model.strategy != "pheromone":
+            return
+
+        grid = self.model.disaster_grid
+        pheromone = self.model.pheromone_grid
+        max_val = float(pheromone.max())
+
+        if max_val == 0.0:
+            return
+
+        r1, g1, b1 = _PASSABLE_RGB
+        r2, g2, b2 = _PHEROMONE_RGB
+
+        for x in range(grid.width):
+            for y in range(grid.height):
+                if grid.grid_state[x, y] != CellType.PASSABLE:
+                    continue
+                t = pheromone[x, y] / max_val
+                r = int(r1 + (r2 - r1) * t)
+                g = int(g1 + (g2 - g1) * t)
+                b = int(b1 + (b2 - b1) * t)
+                self.canvas.itemconfig(
+                    f"cell_{x}_{y}", fill=f"#{r:02X}{g:02X}{b:02X}"
+                )
+
     def _render_loop(self) -> None:
-        """Reposition drone ovals using linear interpolation at ~60fps."""
+        """Reposition drone ovals and update pheromone overlay at ~60fps."""
         now_ms = time.monotonic() * 1000
         r = DRONE_RADIUS
 
@@ -313,6 +346,7 @@ class PlaygroundApp:
                 self._drone_ovals[uid], px - r, py - r, px + r, py + r
             )
 
+        self._update_pheromone_overlay()
         self.root.after(16, self._render_loop)
 
     def _toggle_running(self) -> None:
