@@ -4,6 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -281,6 +282,68 @@ def plot_coverage_vs_hazard_rate(summary: pd.DataFrame) -> None:
     print(f"Saved {out}")
 
 
+def plot_agent_losses_boxplot(all_runs: pd.DataFrame) -> None:
+    """
+    Saves a grouped boxplot of agents_lost by strategy and swarm_size with scatter overlay.
+
+    Args:
+        - all_runs: Full per-run DataFrame from load_results().
+    """
+    strategies = ["random", "astar", "pheromone"]
+    swarm_sizes = [3, 6, 12]
+    size_palette = {3: "#c7e9b4", 6: "#41b6c4", 12: "#225ea8"}
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    sns.boxplot(
+        data=all_runs,
+        x="strategy",
+        y="agents_lost",
+        hue="swarm_size",
+        order=strategies,
+        hue_order=swarm_sizes,
+        palette=size_palette,
+        width=0.6,
+        showfliers=False,
+        ax=ax,
+    )
+    sns.stripplot(
+        data=all_runs,
+        x="strategy",
+        y="agents_lost",
+        hue="swarm_size",
+        order=strategies,
+        hue_order=swarm_sizes,
+        palette=size_palette,
+        dodge=True,
+        size=3,
+        alpha=0.4,
+        jitter=True,
+        legend=False,
+        ax=ax,
+    )
+
+    ax.set_xticks(range(len(strategies)))
+    ax.set_xticklabels([s.capitalize() for s in strategies])
+    ax.set_xlabel("Strategy")
+    ax.set_ylabel("Agents Lost")
+    ax.set_title("Agent Losses by Strategy and Swarm Size")
+    ax.grid(axis="y", alpha=0.3)
+
+    handles, _ = ax.get_legend_handles_labels()
+    ax.legend(
+        handles[: len(swarm_sizes)],
+        [f"Swarm size {sz}" for sz in swarm_sizes],
+        title="Swarm Size",
+    )
+
+    fig.tight_layout()
+    out = FIGURES_DIR / "agent_losses_boxplot.png"
+    fig.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out}")
+
+
 def main() -> None:
     """
     Loads raw results, computes summary statistics, and runs significance tests.
@@ -297,8 +360,10 @@ def main() -> None:
 
     print("Generating figures...")
     summary = pd.read_csv(SUMMARY_PATH)
+    all_runs = pd.read_csv(ALL_RUNS_PATH)
     plot_survivors_by_strategy(summary)
     plot_coverage_vs_hazard_rate(summary)
+    plot_agent_losses_boxplot(all_runs)
 
     print("Done.")
 

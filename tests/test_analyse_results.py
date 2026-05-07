@@ -4,8 +4,10 @@ import pandas as pd
 import pytest
 
 from experiments.analyse_results import (
+    ALL_RUNS_PATH,
     FIGURES_DIR,
     SUMMARY_PATH,
+    plot_agent_losses_boxplot,
     plot_coverage_vs_hazard_rate,
     plot_survivors_by_strategy,
 )
@@ -14,6 +16,11 @@ from experiments.analyse_results import (
 @pytest.fixture()
 def summary() -> pd.DataFrame:
     return pd.read_csv(SUMMARY_PATH)
+
+
+@pytest.fixture()
+def all_runs() -> pd.DataFrame:
+    return pd.read_csv(ALL_RUNS_PATH)
 
 
 class TestPlotSurvivorsByStrategy:
@@ -52,5 +59,25 @@ class TestPlotCoverageVsHazardRate:
             ar.FIGURES_DIR = original
 
         out = tmp_path / "coverage_vs_hazard_rate.png"
+        assert out.exists()
+        assert out.stat().st_size > 10_000
+
+
+class TestPlotAgentLossesBoxplot:
+    """Tests for plot_agent_losses_boxplot()."""
+
+    def test_figure_file_exists_and_is_large_enough(
+        self, all_runs: pd.DataFrame, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        import experiments.analyse_results as ar
+
+        original = ar.FIGURES_DIR
+        ar.FIGURES_DIR = tmp_path
+        try:
+            plot_agent_losses_boxplot(all_runs)
+        finally:
+            ar.FIGURES_DIR = original
+
+        out = tmp_path / "agent_losses_boxplot.png"
         assert out.exists()
         assert out.stat().st_size > 10_000
