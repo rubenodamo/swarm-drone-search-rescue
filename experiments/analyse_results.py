@@ -233,6 +233,54 @@ def plot_survivors_by_strategy(summary: pd.DataFrame) -> None:
     print(f"Saved {out}")
 
 
+def plot_coverage_vs_hazard_rate(summary: pd.DataFrame) -> None:
+    """
+    Saves a line chart of mean coverage% vs hazard rate, one line per strategy.
+
+    Args:
+        - summary: DataFrame from compute_summary(), filtered to swarm_size=6 internally.
+    """
+    df = summary[summary["swarm_size"] == 6].copy()
+
+    hazard_order = ["slow", "medium", "fast"]
+    strategies = ["random", "astar", "pheromone"]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    for s in strategies:
+        sdf = (
+            df[df["strategy"] == s]
+            .set_index("hazard_rate")
+            .reindex(hazard_order)
+        )
+        means = sdf["coverage_pct_mean"].values
+        stds = sdf["coverage_pct_std"].values
+        color = STRATEGY_COLORS[s]
+        ax.plot(
+            hazard_order, means, marker="o", label=s.capitalize(), color=color
+        )
+        ax.fill_between(
+            hazard_order,
+            means - stds,
+            means + stds,
+            alpha=0.15,
+            color=color,
+        )
+
+    ax.set_xlabel("Hazard Rate")
+    ax.set_ylabel("Mean Coverage (%)")
+    ax.set_title("Coverage vs Hazard Rate by Strategy (swarm size = 6)")
+    ax.set_ylim(0, 80)
+    ax.legend(title="Strategy")
+    ax.grid(axis="y", alpha=0.3)
+
+    fig.tight_layout()
+    out = FIGURES_DIR / "coverage_vs_hazard_rate.png"
+    fig.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out}")
+
+
 def main() -> None:
     """
     Loads raw results, computes summary statistics, and runs significance tests.
@@ -250,6 +298,7 @@ def main() -> None:
     print("Generating figures...")
     summary = pd.read_csv(SUMMARY_PATH)
     plot_survivors_by_strategy(summary)
+    plot_coverage_vs_hazard_rate(summary)
 
     print("Done.")
 
