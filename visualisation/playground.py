@@ -335,7 +335,9 @@ class PlaygroundApp:
 
         for survivor in grid.survivors:
             if survivor.found and survivor.pos in self._survivor_items:
-                self.canvas.delete(self._survivor_items.pop(survivor.pos))
+                item_id = self._survivor_items.pop(survivor.pos)
+                self.canvas.itemconfig(item_id, fill="#00CC44")
+                self.root.after(400, lambda i=item_id: self.canvas.delete(i))
 
     def _schedule_sim(self) -> None:
         """Schedule the next sim step if running and model is not done."""
