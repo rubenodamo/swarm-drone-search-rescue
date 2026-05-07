@@ -47,7 +47,7 @@ class PlaygroundApp:
             - root: The root Tk window.
         """
         self.root = root
-        self.root.title("Swarm Drone Search & Rescue — Playground")
+        self.root.title("Swarm Drone Search & Rescue - Playground")
         self.root.resizable(False, False)
 
         self.running: bool = False
@@ -127,7 +127,7 @@ class PlaygroundApp:
                   command=self._reset).pack(fill=tk.X, pady=2)
 
         metrics = tk.LabelFrame(panel, text="Metrics", padx=6, pady=6)
-        metrics.pack(fill=tk.X)
+        metrics.pack(fill=tk.X, pady=(0, 8))
 
         for row, (label, var) in enumerate([
             ("Timestep", self._metric_timestep),
@@ -139,6 +139,8 @@ class PlaygroundApp:
                 row=row, column=0, sticky="w", pady=1)
             tk.Label(metrics, textvariable=var, anchor="w").grid(
                 row=row, column=1, sticky="w", padx=(6, 0), pady=1)
+
+        self._build_legend(panel)
 
     def _add_option_row(
         self,
@@ -162,6 +164,36 @@ class PlaygroundApp:
             row=row, column=0, sticky="w", pady=2)
         tk.OptionMenu(parent, var, *options).grid(
             row=row, column=1, sticky="ew", pady=2)
+
+    def _build_legend(self, panel: tk.Frame) -> None:
+        """Add a Legend LabelFrame with coloured swatches for all cell/drone types."""
+        legend = tk.LabelFrame(panel, text="Legend", padx=6, pady=4)
+        legend.pack(fill=tk.X)
+
+        entries: list[tuple[str, str, bool]] = [
+            (_CELL_COLOURS[CellType.PASSABLE], "Passable", False),
+            (_CELL_COLOURS[CellType.OBSTACLE], "Obstacle", False),
+            (_CELL_COLOURS[CellType.FIRE], "Fire", False),
+            ("#FFD700", "Survivor ★", True),
+            (STRATEGY_COLOURS["random"], "Random drone", False),
+            (STRATEGY_COLOURS["astar"], "A* drone", False),
+            (STRATEGY_COLOURS["pheromone"], "Pheromone drone", False),
+        ]
+
+        for i, (colour, label, is_star) in enumerate(entries):
+            swatch = tk.Canvas(
+                legend, width=12, height=12, highlightthickness=0,
+            )
+            swatch.grid(row=i, column=0, padx=(0, 4), pady=1, sticky="w")
+            if is_star:
+                swatch.create_text(
+                    6, 6, text="★", fill=colour, font=("Arial", 8, "bold"),
+                )
+            else:
+                swatch.create_rectangle(0, 0, 12, 12, fill=colour, outline="")
+            tk.Label(legend, text=label, anchor="w", font=("Arial", 8)).grid(
+                row=i, column=1, sticky="w", pady=1,
+            )
 
     def _build_canvas(self) -> None:
         """Create the canvas widget and draw the initial grid and survivors."""
