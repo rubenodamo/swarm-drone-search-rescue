@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import stats
 
@@ -11,6 +12,25 @@ RAW_DIR = RESULTS_DIR / "raw"
 ALL_RUNS_PATH = RESULTS_DIR / "all_runs.csv"
 SUMMARY_PATH = RESULTS_DIR / "summary.csv"
 SIGNIFICANCE_PATH = RESULTS_DIR / "significance_tests.txt"
+FIGURES_DIR = RESULTS_DIR / "figures"
+
+STRATEGY_COLORS = {
+    "random": "#1f77b4",
+    "astar": "#ff7f0e",
+    "pheromone": "#2ca02c",
+}
+
+plt.rcParams.update(
+    {
+        "font.size": 12,
+        "axes.labelsize": 12,
+        "axes.titlesize": 14,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11,
+        "legend.fontsize": 11,
+        "figure.dpi": 300,
+    }
+)
 
 METRICS = ["survivors_found", "agents_lost", "coverage_pct", "duplicate_visits"]
 STRATEGY_PAIRS = [
