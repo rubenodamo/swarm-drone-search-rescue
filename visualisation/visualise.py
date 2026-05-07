@@ -2,6 +2,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 import solara
 from matplotlib.figure import Figure
+from mesa.visualization import Slider, SolaraViz
 
 from src.environment.grid import CellType
 from src.model.disaster_model import DisasterModel
@@ -30,9 +31,7 @@ def _apply_pheromone_overlay(
     max_p = pheromone_grid.max()
     if max_p <= 0:
         return
-    intensity = (pheromone_grid.T / max_p)[
-        ..., np.newaxis
-    ]
+    intensity = (pheromone_grid.T / max_p)[..., np.newaxis]
     purple = np.array(mcolors.to_rgba("#7B2D8B"))
     passable = (grid_state.T == CellType.PASSABLE)[..., np.newaxis]
     alpha = intensity * passable
@@ -97,13 +96,58 @@ def GridView(model: DisasterModel) -> None:
                 zorder=3,
             )
 
+    for agent in model.agents:
+        if agent.pos is not None:
+            color = agent.portrayal["Color"]
+            ax.plot(
+                agent.pos[0],
+                agent.pos[1],
+                "o",
+                color=color,
+                markersize=10,
+                zorder=4,
+            )
+
     ax.set_xlim(-0.5, width - 0.5)
     ax.set_ylim(-0.5, height - 0.5)
     ax.set_xticks([])
     ax.set_yticks([])
+    alive = len(list(model.agents))
     ax.set_title(
         f"Step {model.timestep}  |  "
-        f"Survivors: {model.survivors_found_count}/10"
+        f"Survivors: {model.survivors_found_count}/10  |  "
+        f"Agents: {alive}/{model.swarm_size}"
     )
 
     solara.FigureMatplotlib(fig, format="png", bbox_inches="tight")
+
+
+model_params = {
+    "strategy": {
+        "type": "Select",
+        "value": "random",
+        "values": ["random", "astar", "pheromone"],
+        "label": "Strategy",
+    },
+    "swarm_size": {
+        "type": "Select",
+        "value": 6,
+        "values": [3, 6, 12],
+        "label": "Swarm Size",
+    },
+    "hazard_rate": {
+        "type": "Select",
+        "value": "medium",
+        "values": ["slow", "medium", "fast"],
+        "label": "Hazard Rate",
+    },
+    "seed": Slider("Seed", 0, 0, 29, 1),
+}
+
+page = SolaraViz(
+    DisasterModel,
+    components=[GridView],
+    model_params=model_params,
+    name="Swarm Drone Search & Rescue",
+)
+page  # noqa
