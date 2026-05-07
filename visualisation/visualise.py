@@ -14,6 +14,31 @@ CELL_COLORS: dict[int, str] = {
 SURVIVOR_COLOR = "#FFD700"
 
 
+def _apply_pheromone_overlay(
+    color_array: np.ndarray,
+    pheromone_grid: np.ndarray,
+    grid_state: np.ndarray,
+) -> None:
+    """
+    Blends pheromone intensity into color_array in-place (passable cells only).
+
+    Args:
+        - color_array: RGBA array of shape (height, width, 4) to modify.
+        - pheromone_grid: Raw pheromone values of shape (width, height).
+        - grid_state: Cell-type array of shape (width, height).
+    """
+    max_p = pheromone_grid.max()
+    if max_p <= 0:
+        return
+    intensity = (pheromone_grid.T / max_p)[
+        ..., np.newaxis
+    ]
+    purple = np.array(mcolors.to_rgba("#7B2D8B"))
+    passable = (grid_state.T == CellType.PASSABLE)[..., np.newaxis]
+    alpha = intensity * passable
+    color_array[:] = color_array * (1 - alpha) + purple * alpha
+
+
 def portray_cell(cell_type: CellType) -> dict:
     """
     Returns the portrayal dict for a given cell type.
@@ -49,6 +74,9 @@ def GridView(model: DisasterModel) -> None:
         rgba = np.array(mcolors.to_rgba(hex_color))
         mask = grid_state.T == cell_type
         color_array[mask] = rgba
+
+    if model.strategy == "pheromone":
+        _apply_pheromone_overlay(color_array, model.pheromone_grid, grid_state)
 
     ax.imshow(
         color_array,
