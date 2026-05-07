@@ -10,6 +10,22 @@ class PheromoneDrone(DroneAgent):
         - visited_cells: Set of (x, y) positions visited by this agent.
     """
 
+    @property
+    def portrayal(self) -> dict:
+        """
+        Returns the visual portrayal dict for this drone.
+
+        Returns:
+            - Dict with Color, Shape, Filled, Layer, r keys.
+        """
+        return {
+            "Color": "#2ca02c",
+            "Shape": "circle",
+            "Filled": True,
+            "Layer": 2,
+            "r": 0.45,
+        }
+
     def step(self) -> None:
         """
         Executes one simulation step for the pheromone drone.

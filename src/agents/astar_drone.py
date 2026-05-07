@@ -28,6 +28,22 @@ class AStarDrone(DroneAgent):
         self.current_path: list[tuple[int, int]] = []
         self.current_target: tuple[int, int] | None = None
 
+    @property
+    def portrayal(self) -> dict:
+        """
+        Returns the visual portrayal dict for this drone.
+
+        Returns:
+            - Dict with Color, Shape, Filled, Layer, r keys.
+        """
+        return {
+            "Color": "#ff7f0e",
+            "Shape": "circle",
+            "Filled": True,
+            "Layer": 2,
+            "r": 0.45,
+        }
+
     def _replan(self) -> None:
         grid_state = self.model.disaster_grid.grid_state
         passable_mask = grid_state != CellType.OBSTACLE.value
