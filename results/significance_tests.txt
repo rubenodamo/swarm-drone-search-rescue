@@ -7,41 +7,41 @@ Bonferroni-corrected threshold for post-hoc: alpha = 0.0167
 
 Metric: survivors_found
 ----------------------------------------
-  Kruskal-Wallis: H=123.56, p=0.0000 — SIGNIFICANT
+  Kruskal-Wallis: H=180.74, p=0.0000 — SIGNIFICANT
   Post-hoc Mann-Whitney U (Bonferroni alpha=0.0167):
-    random vs astar: U=25335.5, p=0.0000 — SIGNIFICANT (astar is higher)
+    random vs astar: U=14321.5, p=0.0000 — SIGNIFICANT (astar is higher)
     random vs pheromone: U=17010.5, p=0.0000 — SIGNIFICANT (pheromone is higher)
-    astar vs pheromone: U=26443.5, p=0.0000 — SIGNIFICANT (pheromone is higher)
+    astar vs pheromone: U=40147.0, p=0.0402 — not significant
 
 Metric: agents_lost
 ----------------------------------------
-  Kruskal-Wallis: H=45.41, p=0.0000 — SIGNIFICANT
+  Kruskal-Wallis: H=18.92, p=0.0001 — SIGNIFICANT
   Post-hoc Mann-Whitney U (Bonferroni alpha=0.0167):
-    random vs astar: U=41633.5, p=0.0026 — SIGNIFICANT (random is higher)
+    random vs astar: U=31672.0, p=0.0075 — SIGNIFICANT (astar is higher)
     random vs pheromone: U=28928.0, p=0.0000 — SIGNIFICANT (pheromone is higher)
-    astar vs pheromone: U=25056.5, p=0.0000 — SIGNIFICANT (pheromone is higher)
+    astar vs pheromone: U=33035.0, p=0.0567 — not significant
 
 Metric: coverage_pct
 ----------------------------------------
-  Kruskal-Wallis: H=165.72, p=0.0000 — SIGNIFICANT
+  Kruskal-Wallis: H=240.74, p=0.0000 — SIGNIFICANT
   Post-hoc Mann-Whitney U (Bonferroni alpha=0.0167):
-    random vs astar: U=25628.0, p=0.0000 — SIGNIFICANT (astar is higher)
+    random vs astar: U=10942.5, p=0.0000 — SIGNIFICANT (astar is higher)
     random vs pheromone: U=13756.5, p=0.0000 — SIGNIFICANT (pheromone is higher)
-    astar vs pheromone: U=22837.5, p=0.0000 — SIGNIFICANT (pheromone is higher)
+    astar vs pheromone: U=41088.5, p=0.0105 — SIGNIFICANT (astar is higher)
 
 Metric: duplicate_visits
 ----------------------------------------
-  Kruskal-Wallis: H=38.95, p=0.0000 — SIGNIFICANT
+  Kruskal-Wallis: H=40.68, p=0.0000 — SIGNIFICANT
   Post-hoc Mann-Whitney U (Bonferroni alpha=0.0167):
-    random vs astar: U=37823.0, p=0.4490 — not significant
+    random vs astar: U=45537.0, p=0.0000 — SIGNIFICANT (random is higher)
     random vs pheromone: U=47192.5, p=0.0000 — SIGNIFICANT (random is higher)
-    astar vs pheromone: U=45099.0, p=0.0000 — SIGNIFICANT (astar is higher)
+    astar vs pheromone: U=38016.0, p=0.3878 — not significant
 
 Plain-English Summary
 ============================================================
 810 runs total (270 per strategy) across all conditions. Kruskal-Wallis tests for any difference among 3 strategies; pairwise Mann-Whitney U with Bonferroni correction identifies which pairs differ.
 
-survivors_found: Significant differences — astar > random; pheromone > random; pheromone > astar.
-agents_lost: Significant differences — random > astar; pheromone > random; pheromone > astar.
-coverage_pct: Significant differences — astar > random; pheromone > random; pheromone > astar.
-duplicate_visits: Significant differences — random > pheromone; astar > pheromone.
+survivors_found: Significant differences — astar > random; pheromone > random.
+agents_lost: Significant differences — astar > random; pheromone > random.
+coverage_pct: Significant differences — astar > random; pheromone > random; astar > pheromone.
+duplicate_visits: Significant differences — random > astar; random > pheromone.

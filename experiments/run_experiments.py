@@ -40,7 +40,9 @@ def _run_single(
 
     summary = MetricsCollector(model).get_summary()
     filename = f"{strategy}_s{swarm_size}_h{hazard_rate}_r{seed:02d}.csv"
-    write_csv(summary, RESULTS_DIR / filename)
+    out_path = RESULTS_DIR / filename
+    out_path.unlink(missing_ok=True)
+    write_csv(summary, out_path)
 
 
 def main() -> None:
