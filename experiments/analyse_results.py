@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -177,6 +178,61 @@ def run_significance_tests(df: pd.DataFrame) -> None:
     print(f"Significance tests written to {SIGNIFICANCE_PATH}")
 
 
+def plot_survivors_by_strategy(summary: pd.DataFrame) -> None:
+    """
+    Saves a grouped bar chart of mean survivors found by strategy and hazard rate.
+
+    Args:
+        - summary: DataFrame from compute_summary(), filtered to swarm_size=6 internally.
+    """
+    df = summary[summary["swarm_size"] == 6].copy()
+
+    strategies = ["random", "astar", "pheromone"]
+    hazard_rates = ["slow", "medium", "fast"]
+    hazard_colors = {"slow": "#aec7e8", "medium": "#6baed6", "fast": "#08519c"}
+
+    x = np.arange(len(strategies))
+    width = 0.25
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    for i, hr in enumerate(hazard_rates):
+        means, stds = [], []
+        for s in strategies:
+            row = df[(df["strategy"] == s) & (df["hazard_rate"] == hr)]
+            means.append(row["survivors_found_mean"].values[0])
+            stds.append(row["survivors_found_std"].values[0])
+        offset = (i - 1) * width
+        ax.bar(
+            x + offset,
+            means,
+            width,
+            label=hr.capitalize(),
+            color=hazard_colors[hr],
+            yerr=stds,
+            capsize=4,
+            ecolor="black",
+            linewidth=0.8,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([s.capitalize() for s in strategies])
+    ax.set_xlabel("Strategy")
+    ax.set_ylabel("Mean Survivors Found")
+    ax.set_title(
+        "Mean Survivors Found by Strategy and Hazard Rate (swarm size = 6)"
+    )
+    ax.set_ylim(0, 10.5)
+    ax.legend(title="Hazard Rate")
+    ax.grid(axis="y", alpha=0.3)
+
+    fig.tight_layout()
+    out = FIGURES_DIR / "survivors_by_strategy.png"
+    fig.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out}")
+
+
 def main() -> None:
     """
     Loads raw results, computes summary statistics, and runs significance tests.
@@ -190,6 +246,10 @@ def main() -> None:
 
     print("Running significance tests...")
     run_significance_tests(df)
+
+    print("Generating figures...")
+    summary = pd.read_csv(SUMMARY_PATH)
+    plot_survivors_by_strategy(summary)
 
     print("Done.")
 
