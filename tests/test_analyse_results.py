@@ -5,10 +5,13 @@ import pytest
 
 from experiments.analyse_results import (
     ALL_RUNS_PATH,
+    COVERAGE_MEAN_PATH,
     FIGURES_DIR,
+    FIRE_SEEDS_PATH,
     SUMMARY_PATH,
     TIMESERIES_ALL_PATH,
     plot_agent_losses_boxplot,
+    plot_coverage_heatmaps,
     plot_coverage_vs_hazard_rate,
     plot_survivors_by_strategy,
     plot_survivors_over_time,
@@ -104,3 +107,26 @@ class TestPlotSurvivorsOverTime:
         out = tmp_path / "survivors_over_time.png"
         assert out.exists()
         assert out.stat().st_size > 10_000
+
+
+class TestPlotCoverageHeatmaps:
+    """Tests for plot_coverage_heatmaps()."""
+
+    def test_all_three_figures_exist_and_are_large_enough(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        import experiments.analyse_results as ar
+
+        coverage_mean = pd.read_csv(COVERAGE_MEAN_PATH)
+        fire_seeds = pd.read_csv(FIRE_SEEDS_PATH)
+        original = ar.FIGURES_DIR
+        ar.FIGURES_DIR = tmp_path
+        try:
+            plot_coverage_heatmaps(coverage_mean, fire_seeds)
+        finally:
+            ar.FIGURES_DIR = original
+
+        for strategy in ["random", "astar", "pheromone"]:
+            out = tmp_path / f"coverage_heatmap_{strategy}.png"
+            assert out.exists(), f"Missing: coverage_heatmap_{strategy}.png"
+            assert out.stat().st_size > 10_000

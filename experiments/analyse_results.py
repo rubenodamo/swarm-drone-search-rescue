@@ -16,6 +16,8 @@ SUMMARY_PATH = RESULTS_DIR / "summary.csv"
 SIGNIFICANCE_PATH = RESULTS_DIR / "significance_tests.txt"
 FIGURES_DIR = RESULTS_DIR / "figures"
 TIMESERIES_ALL_PATH = RESULTS_DIR / "timeseries_all.csv"
+COVERAGE_MEAN_PATH = RESULTS_DIR / "coverage_mean.csv"
+FIRE_SEEDS_PATH = RESULTS_DIR / "fire_seed_positions.csv"
 
 STRATEGY_COLORS = {
     "random": "#1f77b4",
@@ -389,6 +391,49 @@ def plot_survivors_over_time(timeseries_all: pd.DataFrame) -> None:
     print(f"Saved {out}")
 
 
+def plot_coverage_heatmaps(
+    coverage_mean: pd.DataFrame, fire_seeds: pd.DataFrame
+) -> None:
+    """
+    Saves one 20x20 coverage heatmap PNG per strategy.
+
+    Args:
+        - coverage_mean: DataFrame with columns: strategy, x, y, mean_visits.
+        - fire_seeds: DataFrame with columns: x, y (seed=0 representative positions).
+    """
+    strategies = ["random", "astar", "pheromone"]
+
+    for s in strategies:
+        sdf = coverage_mean[coverage_mean["strategy"] == s]
+        grid = sdf.pivot(index="y", columns="x", values="mean_visits").values
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        im = ax.imshow(
+            grid, origin="lower", cmap="YlOrRd", interpolation="nearest"
+        )
+        plt.colorbar(im, ax=ax, label="Mean Visit Count", shrink=0.8)
+
+        for i, (_, row) in enumerate(fire_seeds.iterrows()):
+            label = "Fire seed (seed=0)" if i == 0 else ""
+            ax.plot(row["x"], row["y"], "b*", markersize=12, label=label)
+
+        fig.suptitle(
+            f"Coverage Heatmap - {s.capitalize()}"
+            "\n(swarm size=6, hazard rate=medium)",
+            fontsize=12,
+        )
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.legend(loc="upper right", fontsize=9)
+
+        fig.tight_layout()
+        fig.subplots_adjust(top=0.94)
+        out = FIGURES_DIR / f"coverage_heatmap_{s}.png"
+        fig.savefig(out, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved {out}")
+
+
 def main() -> None:
     """
     Loads raw results, computes summary statistics, and runs significance tests.
@@ -411,6 +456,9 @@ def main() -> None:
     plot_agent_losses_boxplot(all_runs)
     timeseries_all = pd.read_csv(TIMESERIES_ALL_PATH)
     plot_survivors_over_time(timeseries_all)
+    coverage_mean = pd.read_csv(COVERAGE_MEAN_PATH)
+    fire_seeds = pd.read_csv(FIRE_SEEDS_PATH)
+    plot_coverage_heatmaps(coverage_mean, fire_seeds)
 
     print("Done.")
 
