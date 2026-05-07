@@ -66,6 +66,10 @@ def GridView(model: DisasterModel) -> None:
     Args:
         - model: The DisasterModel instance to visualise.
     """
+    if not hasattr(model, "disaster_grid"):
+        solara.Text("Initialising simulation...")
+        return
+
     fig = Figure(figsize=(7, 7))
     ax = fig.add_subplot(111)
 
@@ -149,8 +153,12 @@ model_params = {
     "seed": Slider("Seed", 0, 0, 29, 1),
 }
 
+_initial_model = DisasterModel(
+    strategy="random", swarm_size=6, hazard_rate="medium", seed=0
+)
+
 page = SolaraViz(
-    DisasterModel,
+    _initial_model,
     components=[GridView],
     model_params=model_params,
     name="Swarm Drone Search & Rescue",
