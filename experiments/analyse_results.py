@@ -15,6 +15,7 @@ ALL_RUNS_PATH = RESULTS_DIR / "all_runs.csv"
 SUMMARY_PATH = RESULTS_DIR / "summary.csv"
 SIGNIFICANCE_PATH = RESULTS_DIR / "significance_tests.txt"
 FIGURES_DIR = RESULTS_DIR / "figures"
+TIMESERIES_ALL_PATH = RESULTS_DIR / "timeseries_all.csv"
 
 STRATEGY_COLORS = {
     "random": "#1f77b4",
@@ -344,6 +345,50 @@ def plot_agent_losses_boxplot(all_runs: pd.DataFrame) -> None:
     print(f"Saved {out}")
 
 
+def plot_survivors_over_time(timeseries_all: pd.DataFrame) -> None:
+    """
+    Saves a line chart of mean cumulative survivors found per timestep by strategy.
+
+    Args:
+        - timeseries_all: Flat DataFrame from results/timeseries_all.csv with
+          columns: strategy, seed, timestep, survivors_found.
+    """
+    strategies = ["random", "astar", "pheromone"]
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    for s in strategies:
+        sdf = timeseries_all[timeseries_all["strategy"] == s]
+        grouped = sdf.groupby("timestep")["survivors_found"]
+        means = grouped.mean()
+        stds = grouped.std()
+        color = STRATEGY_COLORS[s]
+        ax.plot(means.index, means.values, label=s.capitalize(), color=color)
+        ax.fill_between(
+            means.index,
+            means.values - stds.values,
+            means.values + stds.values,
+            alpha=0.15,
+            color=color,
+        )
+
+    ax.set_xlabel("Timestep")
+    ax.set_ylabel("Mean Cumulative Survivors Found")
+    ax.set_title(
+        "Survivors Found Over Time by Strategy (swarm size=6, hazard rate=medium)"
+    )
+    ax.set_xlim(0, 200)
+    ax.set_ylim(0, 10.5)
+    ax.legend(title="Strategy")
+    ax.grid(axis="y", alpha=0.3)
+
+    fig.tight_layout()
+    out = FIGURES_DIR / "survivors_over_time.png"
+    fig.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out}")
+
+
 def main() -> None:
     """
     Loads raw results, computes summary statistics, and runs significance tests.
@@ -364,6 +409,8 @@ def main() -> None:
     plot_survivors_by_strategy(summary)
     plot_coverage_vs_hazard_rate(summary)
     plot_agent_losses_boxplot(all_runs)
+    timeseries_all = pd.read_csv(TIMESERIES_ALL_PATH)
+    plot_survivors_over_time(timeseries_all)
 
     print("Done.")
 
