@@ -1,3 +1,4 @@
+import math
 import sys
 import time
 import tkinter as tk
@@ -56,6 +57,7 @@ class PlaygroundApp:
         self._survivor_items: dict[tuple[int, int], int] = {}
         self._drone_ovals: dict[int, int] = {}
         self._drone_interp: dict[int, tuple[float, float, float, float, float]] = {}
+        self._drone_heading: dict[int, float] = {}
 
         self._strategy_var = tk.StringVar(value="random")
         self._swarm_var = tk.StringVar(value="6")
@@ -228,21 +230,23 @@ class PlaygroundApp:
             self._draw_survivor_star(survivor.pos)
 
     def _init_drones(self) -> None:
-        """Create oval canvas items for all agents at their starting positions."""
+        """Create triangle polygon canvas items for all agents at their starting positions."""
         colour = STRATEGY_COLOURS[self.model.strategy]
-        r = DRONE_RADIUS
         now_ms = time.monotonic() * 1000
+        default_heading = -math.pi / 2
 
         for agent in self.model.agents:
             px, py = self._cell_centre(*agent.pos)
-            oval_id = self.canvas.create_oval(
-                px - r, py - r, px + r, py + r,
+            coords = self._triangle_coords(px, py, DRONE_RADIUS, default_heading)
+            poly_id = self.canvas.create_polygon(
+                *coords,
                 fill=colour,
                 outline="white",
                 width=1,
             )
-            self._drone_ovals[agent.unique_id] = oval_id
+            self._drone_ovals[agent.unique_id] = poly_id
             self._drone_interp[agent.unique_id] = (px, py, px, py, now_ms)
+            self._drone_heading[agent.unique_id] = default_heading
 
     def _cell_topleft(self, x: int, y: int) -> tuple[int, int]:
         """
@@ -274,6 +278,31 @@ class PlaygroundApp:
         """
         cx, cy = self._cell_topleft(x, y)
         return cx + CELL_SIZE / 2, cy + CELL_SIZE / 2
+
+    @staticmethod
+    def _triangle_coords(
+        cx: float, cy: float, r: float, theta: float
+    ) -> list[float]:
+        """
+        Return flat [x0,y0, x1,y1, x2,y2] coords for a triangle centred at (cx,cy).
+
+        Args:
+            - cx: Canvas x of centroid.
+            - cy: Canvas y of centroid.
+            - r: Radius (half-size) of the triangle.
+            - theta: Heading angle in radians (canvas coords; 0=right, -π/2=up).
+
+        Returns:
+            - Flat list of six floats for canvas.create_polygon / canvas.coords.
+        """
+        pts = [(r * 0.9, 0.0), (-r * 0.55, r * 0.5), (-r * 0.55, -r * 0.5)]
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+        result: list[float] = []
+        for px, py in pts:
+            result.append(cx + px * cos_t - py * sin_t)
+            result.append(cy + px * sin_t + py * cos_t)
+        return result
 
     def _draw_survivor_star(self, pos: tuple[int, int]) -> None:
         """
@@ -338,6 +367,7 @@ class PlaygroundApp:
             if uid not in alive_ids:
                 self.canvas.delete(self._drone_ovals.pop(uid))
                 self._drone_interp.pop(uid, None)
+                self._drone_heading.pop(uid, None)
 
         for agent in self.model.agents:
             uid = agent.unique_id
@@ -346,6 +376,10 @@ class PlaygroundApp:
             )
             new_px, new_py = self._cell_centre(*agent.pos)
             self._drone_interp[uid] = (old_px, old_py, new_px, new_py, now_ms)
+            dx = new_px - old_px
+            dy = new_py - old_py
+            if dx != 0.0 or dy != 0.0:
+                self._drone_heading[uid] = math.atan2(dy, dx)
 
         if self.model.is_done:
             self.running = False
@@ -384,9 +418,8 @@ class PlaygroundApp:
                 )
 
     def _render_loop(self) -> None:
-        """Reposition drone ovals and update pheromone overlay at ~60fps."""
+        """Reposition drone triangles and update pheromone overlay at ~60fps."""
         now_ms = time.monotonic() * 1000
-        r = DRONE_RADIUS
 
         for uid, (old_px, old_py, new_px, new_py, start_ms) in (
             self._drone_interp.items()
@@ -396,9 +429,9 @@ class PlaygroundApp:
             t = min(1.0, (now_ms - start_ms) / self._step_duration_ms)
             px = old_px + (new_px - old_px) * t
             py = old_py + (new_py - old_py) * t
-            self.canvas.coords(
-                self._drone_ovals[uid], px - r, py - r, px + r, py + r
-            )
+            heading = self._drone_heading.get(uid, -math.pi / 2)
+            coords = self._triangle_coords(px, py, DRONE_RADIUS, heading)
+            self.canvas.coords(self._drone_ovals[uid], *coords)
 
         self._update_pheromone_overlay()
         self.root.after(16, self._render_loop)
@@ -441,6 +474,7 @@ class PlaygroundApp:
             self.canvas.delete(oval_id)
         self._drone_ovals.clear()
         self._drone_interp.clear()
+        self._drone_heading.clear()
 
         for item_id in self._survivor_items.values():
             self.canvas.delete(item_id)
