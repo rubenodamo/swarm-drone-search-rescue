@@ -71,13 +71,20 @@ class DroneAgent(mesa.Agent):
     def detect_survivors(self) -> None:
         """
         Finds and marks as found any survivors within Manhattan distance 2.
+
+        Each in-range survivor is missed with probability model.noise_prob
+        (false negative). At noise_prob=0.0 every in-range survivor is found;
+        at noise_prob=1.0 none are ever detected.
         """
+        noise_prob = self.model.noise_prob
         x, y = self.pos
         for survivor in self.model.disaster_grid.survivors:
             if survivor.found:
                 continue
             sx, sy = survivor.pos
             if abs(x - sx) + abs(y - sy) <= 2:
+                if noise_prob > 0.0 and self.model.rng.random() < noise_prob:
+                    continue
                 survivor.found = True
                 self.model.survivors_found_count += 1
 

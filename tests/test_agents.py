@@ -82,6 +82,39 @@ class TestSurvivorDetection:
         assert model.survivors_found_count == 0
 
 
+class TestSurvivorDetectionNoise:
+    """Tests for DroneAgent.detect_survivors() with noise_prob."""
+
+    def test_noise_prob_1_never_detects_survivors(self):
+        model = DisasterModel(
+            strategy="random",
+            swarm_size=0,
+            hazard_rate="medium",
+            seed=42,
+            noise_prob=1.0,
+        )
+        model.disaster_grid.survivors = [Survivor(pos=(5, 5))]
+        drone = _place_drone(model, (5, 5))
+        for _ in range(30):
+            drone.step()
+        assert model.disaster_grid.survivors[0].found is False
+        assert model.survivors_found_count == 0
+
+    def test_noise_prob_0_detection_unchanged(self):
+        model = DisasterModel(
+            strategy="random",
+            swarm_size=0,
+            hazard_rate="medium",
+            seed=42,
+            noise_prob=0.0,
+        )
+        model.disaster_grid.survivors = [Survivor(pos=(7, 5))]
+        drone = _place_drone(model, (5, 5))
+        drone.step()
+        assert model.disaster_grid.survivors[0].found is True
+        assert model.survivors_found_count == 1
+
+
 class TestMoveTo:
     """Tests for DroneAgent.move_to()."""
 
