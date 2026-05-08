@@ -2,6 +2,7 @@ import math
 import sys
 import time
 import tkinter as tk
+from collections import deque
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -36,6 +37,17 @@ def _darken(hex_colour: str, factor: float = 0.55) -> str:
     return f"#{int(r * factor):02X}{int(g * factor):02X}{int(b * factor):02X}"
 
 
+def _lighten(hex_colour: str, factor: float = 0.45) -> str:
+    r = int(hex_colour[1:3], 16)
+    g = int(hex_colour[3:5], 16)
+    b = int(hex_colour[5:7], 16)
+    return (
+        f"#{int(r + (255 - r) * factor):02X}"
+        f"{int(g + (255 - g) * factor):02X}"
+        f"{int(b + (255 - b) * factor):02X}"
+    )
+
+
 class PlaygroundApp:
     """
     Tkinter animated playground for the swarm drone simulation.
@@ -63,6 +75,8 @@ class PlaygroundApp:
 
         self._survivor_items: dict[tuple[int, int], int] = {}
         self._drone_ovals: dict[int, int] = {}
+        self._drone_trails: dict[int, int] = {}
+        self._drone_trail_pos: dict[int, deque[tuple[float, float]]] = {}
         self._drone_interp: dict[int, tuple[float, float, float, float, float]] = {}
         self._drone_heading: dict[int, float] = {}
 
@@ -243,14 +257,22 @@ class PlaygroundApp:
             self._draw_survivor_star(survivor.pos)
 
     def _init_drones(self) -> None:
-        """Create chevron polygon canvas items for all agents at their starting positions."""
+        """Create trail line + chevron polygon canvas items for all agents."""
         colour = STRATEGY_COLOURS[self.model.strategy]
         outline = _darken(colour)
+        trail_colour = _lighten(colour)
         now_ms = time.monotonic() * 1000
         default_heading = -math.pi / 2
 
         for agent in self.model.agents:
             px, py = self._cell_centre(*agent.pos)
+            trail_id = self.canvas.create_line(
+                px, py, px, py,
+                fill=trail_colour, width=2, capstyle=tk.ROUND, joinstyle=tk.ROUND,
+            )
+            self._drone_trails[agent.unique_id] = trail_id
+            self._drone_trail_pos[agent.unique_id] = deque(maxlen=3)
+
             coords = self._chevron_coords(px, py, DRONE_RADIUS, default_heading)
             poly_id = self.canvas.create_polygon(
                 *coords, fill=colour, outline=outline, width=2,
@@ -384,6 +406,8 @@ class PlaygroundApp:
         for uid in list(self._drone_ovals):
             if uid not in alive_ids:
                 self.canvas.delete(self._drone_ovals.pop(uid))
+                self.canvas.delete(self._drone_trails.pop(uid))
+                self._drone_trail_pos.pop(uid, None)
                 self._drone_interp.pop(uid, None)
                 self._drone_heading.pop(uid, None)
 
@@ -393,6 +417,7 @@ class PlaygroundApp:
                 *old_positions.get(uid, agent.pos)
             )
             new_px, new_py = self._cell_centre(*agent.pos)
+            self._drone_trail_pos[uid].append((old_px, old_py))
             self._drone_interp[uid] = (old_px, old_py, new_px, new_py, now_ms)
             dx = new_px - old_px
             dy = new_py - old_py
@@ -451,6 +476,12 @@ class PlaygroundApp:
             coords = self._chevron_coords(px, py, DRONE_RADIUS, heading)
             self.canvas.coords(self._drone_ovals[uid], *coords)
 
+            past = list(self._drone_trail_pos.get(uid, []))
+            points = past + [(px, py)]
+            if len(points) >= 2:
+                flat = [c for pos in points for c in pos]
+                self.canvas.coords(self._drone_trails[uid], *flat)
+
         self._update_pheromone_overlay()
         self.root.after(16, self._render_loop)
 
@@ -490,7 +521,11 @@ class PlaygroundApp:
 
         for oval_id in self._drone_ovals.values():
             self.canvas.delete(oval_id)
+        for trail_id in self._drone_trails.values():
+            self.canvas.delete(trail_id)
         self._drone_ovals.clear()
+        self._drone_trails.clear()
+        self._drone_trail_pos.clear()
         self._drone_interp.clear()
         self._drone_heading.clear()
 
