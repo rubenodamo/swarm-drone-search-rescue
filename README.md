@@ -13,7 +13,7 @@ This project was developed as part of the COMP3004 Designing Intelligent Agents 
 ## Strategies
 
 - **Random**: reactive random walk (baseline)
-- **A* Planned**: deliberative frontier-seeking with A* pathfinding
+- **A\* Planned**: deliberative frontier-seeking with A* pathfinding
 - **Pheromone**: Ant Colony Optimisation-inspired stigmergic coordination
 
 ## Installation
