@@ -394,13 +394,14 @@ class PlaygroundApp:
         if self.model.is_done:
             return
 
-        now_ms = time.monotonic() * 1000
         old_positions = {
             agent.unique_id: agent.pos for agent in self.model.agents
         }
 
         self.model.step()
         self.update_cells()
+
+        now_ms = time.monotonic() * 1000
 
         alive_ids = {agent.unique_id for agent in self.model.agents}
         for uid in list(self._drone_ovals):
