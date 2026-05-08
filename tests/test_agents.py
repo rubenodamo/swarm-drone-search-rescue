@@ -83,15 +83,15 @@ class TestSurvivorDetection:
 
 
 class TestSurvivorDetectionNoise:
-    """Tests for DroneAgent.detect_survivors() with noise_prob."""
+    """Tests for DroneAgent.detect_survivors() with survivor_detection_noise."""
 
-    def test_noise_prob_1_never_detects_survivors(self):
+    def test_survivor_noise_1_never_detects(self):
         model = DisasterModel(
             strategy="random",
             swarm_size=0,
             hazard_rate="medium",
             seed=42,
-            noise_prob=1.0,
+            survivor_detection_noise=1.0,
         )
         model.disaster_grid.survivors = [Survivor(pos=(5, 5))]
         drone = _place_drone(model, (5, 5))
@@ -100,19 +100,47 @@ class TestSurvivorDetectionNoise:
         assert model.disaster_grid.survivors[0].found is False
         assert model.survivors_found_count == 0
 
-    def test_noise_prob_0_detection_unchanged(self):
+    def test_survivor_noise_0_detection_unchanged(self):
         model = DisasterModel(
             strategy="random",
             swarm_size=0,
             hazard_rate="medium",
             seed=42,
-            noise_prob=0.0,
+            survivor_detection_noise=0.0,
         )
         model.disaster_grid.survivors = [Survivor(pos=(7, 5))]
         drone = _place_drone(model, (5, 5))
         drone.step()
         assert model.disaster_grid.survivors[0].found is True
         assert model.survivors_found_count == 1
+
+
+class TestHazardDetectionNoise:
+    """Tests for DroneAgent.get_perceived_neighbours() with hazard_detection_noise."""
+
+    def test_hazard_noise_0_excludes_fire_neighbours(self):
+        model = DisasterModel(
+            strategy="random",
+            swarm_size=0,
+            hazard_rate="medium",
+            seed=42,
+            hazard_detection_noise=0.0,
+        )
+        model.disaster_grid.grid_state[5, 6] = CellType.FIRE
+        drone = _place_drone(model, (5, 5))
+        assert (5, 6) not in drone.get_perceived_neighbours((5, 5))
+
+    def test_hazard_noise_1_includes_fire_neighbours(self):
+        model = DisasterModel(
+            strategy="random",
+            swarm_size=0,
+            hazard_rate="medium",
+            seed=42,
+            hazard_detection_noise=1.0,
+        )
+        model.disaster_grid.grid_state[5, 6] = CellType.FIRE
+        drone = _place_drone(model, (5, 5))
+        assert (5, 6) in drone.get_perceived_neighbours((5, 5))
 
 
 class TestMoveTo:
@@ -140,12 +168,12 @@ class TestMoveTo:
         with pytest.raises(ValueError):
             drone.move_to((5, 6))
 
-    def test_move_to_fire_raises(self):
+    def test_move_to_fire_is_allowed(self):
         model = _make_model()
         drone = _place_drone(model, (5, 5))
         model.disaster_grid.grid_state[5, 6] = CellType.FIRE
-        with pytest.raises(ValueError):
-            drone.move_to((5, 6))
+        drone.move_to((5, 6))
+        assert drone.pos == (5, 6)
 
 
 class TestRandomDrone:

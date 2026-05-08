@@ -27,7 +27,8 @@ class DisasterModel(mesa.Model):
         - strategy: Search strategy name ('random', 'astar', 'pheromone').
         - swarm_size: Number of drone agents.
         - hazard_rate: Named hazard level ('slow', 'medium', 'fast').
-        - noise_prob: Probability each in-range survivor is missed (false negative).
+        - survivor_detection_noise: Per-survivor miss probability when in sensing range.
+        - hazard_detection_noise: Probability a drone fails to perceive an adjacent fire cell.
         - disaster_grid: The DisasterGrid environment.
         - pheromone_grid: Shared pheromone values updated by PheromoneDrone.
         - coverage_grid: Per-cell visit counts across all agents.
@@ -44,7 +45,8 @@ class DisasterModel(mesa.Model):
         seed: int,
         width: int = 20,
         height: int = 20,
-        noise_prob: float = 0.0,
+        survivor_detection_noise: float = 0.0,
+        hazard_detection_noise: float = 0.0,
     ) -> None:
         """
         Initialises the disaster model.
@@ -56,7 +58,8 @@ class DisasterModel(mesa.Model):
             - seed: Random seed for reproducibility.
             - width: Grid width in cells.
             - height: Grid height in cells.
-            - noise_prob: Per-survivor miss probability in sensing (0.0 = perfect, 1.0 = blind).
+            - survivor_detection_noise: Per-survivor miss probability (0.0 = perfect, 1.0 = blind).
+            - hazard_detection_noise: Per-fire-cell miss probability (0.0 = perfect, 1.0 = blind).
         """
         super().__init__(rng=seed)
         self.rng = np.random.default_rng(seed)
@@ -64,7 +67,8 @@ class DisasterModel(mesa.Model):
         self.strategy = strategy
         self.swarm_size = swarm_size
         self.hazard_rate = hazard_rate
-        self.noise_prob = noise_prob
+        self.survivor_detection_noise = survivor_detection_noise
+        self.hazard_detection_noise = hazard_detection_noise
         self._hazard_p = HAZARD_RATES[hazard_rate]
 
         self.disaster_grid = DisasterGrid(width, height, seed)

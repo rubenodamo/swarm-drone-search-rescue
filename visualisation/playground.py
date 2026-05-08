@@ -83,6 +83,8 @@ class PlaygroundApp:
         self._strategy_var = tk.StringVar(value="random")
         self._swarm_var = tk.StringVar(value="6")
         self._hazard_var = tk.StringVar(value="medium")
+        self._survivor_noise_var = tk.StringVar(value="0.0")
+        self._hazard_noise_var = tk.StringVar(value="0.0")
         self._seed_var = tk.IntVar(value=0)
         self._speed_var = tk.IntVar(value=1)
 
@@ -96,6 +98,8 @@ class PlaygroundApp:
             swarm_size=6,
             hazard_rate="medium",
             seed=0,
+            survivor_detection_noise=0.0,
+            hazard_detection_noise=0.0,
         )
 
         self._build_left_panel()
@@ -123,19 +127,23 @@ class PlaygroundApp:
                              ["3", "6", "12"])
         self._add_option_row(params, 2, "Hazard rate", self._hazard_var,
                              ["slow", "medium", "fast"])
+        self._add_option_row(params, 3, "Survivor noise", self._survivor_noise_var,
+                             ["0.0", "0.05", "0.10", "0.20"])
+        self._add_option_row(params, 4, "Hazard noise", self._hazard_noise_var,
+                             ["0.0", "0.05", "0.10", "0.20"])
 
         tk.Label(params, text="Seed", anchor="w").grid(
-            row=3, column=0, sticky="w", pady=2)
+            row=5, column=0, sticky="w", pady=2)
         tk.Scale(params, from_=0, to=29, orient=tk.HORIZONTAL,
                  variable=self._seed_var, length=140).grid(
-            row=3, column=1, sticky="ew", pady=2)
+            row=5, column=1, sticky="ew", pady=2)
 
         tk.Label(params, text="Speed", anchor="w").grid(
-            row=4, column=0, sticky="w", pady=2)
+            row=6, column=0, sticky="w", pady=2)
         tk.Scale(params, from_=1, to=10, orient=tk.HORIZONTAL,
                  variable=self._speed_var, length=140,
                  command=self._on_speed_change).grid(
-            row=4, column=1, sticky="ew", pady=2)
+            row=6, column=1, sticky="ew", pady=2)
 
         controls = tk.LabelFrame(panel, text="Controls", padx=6, pady=6)
         controls.pack(fill=tk.X, pady=(0, 8))
@@ -539,6 +547,8 @@ class PlaygroundApp:
             swarm_size=int(self._swarm_var.get()),
             hazard_rate=self._hazard_var.get(),
             seed=self._seed_var.get(),
+            survivor_detection_noise=float(self._survivor_noise_var.get()),
+            hazard_detection_noise=float(self._hazard_noise_var.get()),
         )
 
         self.update_cells()

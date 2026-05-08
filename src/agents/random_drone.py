@@ -30,7 +30,7 @@ class RandomDrone(DroneAgent):
         """
         Moves to a random passable, non-fire neighbour and detects survivors.
         """
-        neighbours = self.get_passable_neighbours(self.pos)
+        neighbours = self.get_perceived_neighbours(self.pos)
         if neighbours:
             new_pos = tuple(int(c) for c in self.model.rng.choice(neighbours))
             self.move_to(new_pos)

@@ -72,18 +72,24 @@ class AStarDrone(DroneAgent):
         Navigates to the nearest frontier via A*; falls back to random if no frontier exists.
         """
         grid_state = self.model.disaster_grid.grid_state
+        hazard_noise = self.model.hazard_detection_noise
 
-        if (
-            not self.current_path
-            or grid_state[self.current_path[0]] == CellType.FIRE.value
-        ):
+        next_is_fire = bool(
+            self.current_path
+            and grid_state[self.current_path[0]] == CellType.FIRE.value
+        )
+        drone_sees_fire = next_is_fire and (
+            hazard_noise == 0.0 or self.model.rng.random() >= hazard_noise
+        )
+
+        if not self.current_path or drone_sees_fire:
             self._replan()
 
         if self.current_path:
             next_pos = self.current_path.pop(0)
             self.move_to(next_pos)
         else:
-            neighbours = self.get_passable_neighbours(self.pos)
+            neighbours = self.get_perceived_neighbours(self.pos)
             if neighbours:
                 new_pos = tuple(
                     int(c) for c in self.model.rng.choice(neighbours)

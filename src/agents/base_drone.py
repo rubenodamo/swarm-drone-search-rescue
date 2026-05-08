@@ -68,38 +68,71 @@ class DroneAgent(mesa.Agent):
         self.visited_cells.add(pos)
         self.model.coverage_grid[pos] += 1
 
+    def get_perceived_neighbours(
+        self, pos: tuple[int, int]
+    ) -> list[tuple[int, int]]:
+        """
+        Returns neighbours the drone believes are safe to move to.
+
+        Truly passable neighbours are always included. Each adjacent FIRE cell
+        is included with probability model.hazard_detection_noise — the drone
+        fails to perceive it as fire.
+
+        Args:
+            - pos: The (x, y) position to query neighbours for.
+
+        Returns:
+            - List of (x, y) positions perceived as passable.
+        """
+        result = list(self.get_passable_neighbours(pos))
+        hazard_noise = self.model.hazard_detection_noise
+        if hazard_noise == 0.0:
+            return result
+
+        x, y = pos
+        width = self.model.disaster_grid.width
+        height = self.model.disaster_grid.height
+        grid_state = self.model.disaster_grid.grid_state
+        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < width and 0 <= ny < height:
+                if grid_state[nx, ny] == CellType.FIRE:
+                    if self.model.rng.random() < hazard_noise:
+                        result.append((nx, ny))
+        return result
+
     def detect_survivors(self) -> None:
         """
         Finds and marks as found any survivors within Manhattan distance 2.
 
-        Each in-range survivor is missed with probability model.noise_prob
-        (false negative). At noise_prob=0.0 every in-range survivor is found;
-        at noise_prob=1.0 none are ever detected.
+        Each in-range survivor is missed with probability
+        model.survivor_detection_noise (false negative).
         """
-        noise_prob = self.model.noise_prob
+        noise = self.model.survivor_detection_noise
         x, y = self.pos
         for survivor in self.model.disaster_grid.survivors:
             if survivor.found:
                 continue
             sx, sy = survivor.pos
             if abs(x - sx) + abs(y - sy) <= 2:
-                if noise_prob > 0.0 and self.model.rng.random() < noise_prob:
+                if noise > 0.0 and self.model.rng.random() < noise:
                     continue
                 survivor.found = True
                 self.model.survivors_found_count += 1
 
     def move_to(self, new_pos: tuple[int, int]) -> None:
         """
-        Moves the agent to a new position after validating it is passable.
+        Moves the agent to a new position, raising only if the target is an obstacle.
+
+        A drone may move onto a FIRE cell when hazard_detection_noise causes
+        it to misperceive the cell; death is handled by check_agent_deaths().
 
         Args:
             - new_pos: The target (x, y) position.
         """
-        cell_type = self.model.disaster_grid.grid_state[new_pos]
-        if cell_type in (CellType.OBSTACLE, CellType.FIRE):
+        if self.model.disaster_grid.grid_state[new_pos] == CellType.OBSTACLE:
             raise ValueError(
-                f"Cannot move to {new_pos}: cell type is "
-                f"{CellType(cell_type).name}"
+                f"Cannot move to {new_pos}: cell is an obstacle"
             )
         self.model.disaster_grid.grid.move_agent(self, new_pos)
         self.mark_visited(new_pos)

@@ -32,7 +32,7 @@ class PheromoneDrone(DroneAgent):
         """
         self.model.pheromone_grid[self.pos] += 1.0
 
-        neighbours = self.get_passable_neighbours(self.pos)
+        neighbours = self.get_perceived_neighbours(self.pos)
         if neighbours:
             min_val = min(self.model.pheromone_grid[n] for n in neighbours)
             candidates = [
