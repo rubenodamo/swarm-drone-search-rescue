@@ -29,6 +29,13 @@ _PASSABLE_RGB: tuple[int, int, int] = (0xF0, 0xF0, 0xF0)
 _PHEROMONE_RGB: tuple[int, int, int] = (0x7B, 0x2D, 0x8B)
 
 
+def _darken(hex_colour: str, factor: float = 0.55) -> str:
+    r = int(hex_colour[1:3], 16)
+    g = int(hex_colour[3:5], 16)
+    b = int(hex_colour[5:7], 16)
+    return f"#{int(r * factor):02X}{int(g * factor):02X}{int(b * factor):02X}"
+
+
 class PlaygroundApp:
     """
     Tkinter animated playground for the swarm drone simulation.
@@ -176,17 +183,23 @@ class PlaygroundApp:
             (_CELL_COLOURS[CellType.PASSABLE], "Passable", False),
             (_CELL_COLOURS[CellType.OBSTACLE], "Obstacle", False),
             (_CELL_COLOURS[CellType.FIRE], "Fire", False),
-            ("#FFD700", "Survivor ★", True),
+            ("#FFD700", "Survivor", True),
             (STRATEGY_COLOURS["random"], "Random drone", False),
             (STRATEGY_COLOURS["astar"], "A* drone", False),
             (STRATEGY_COLOURS["pheromone"], "Pheromone drone", False),
         ]
 
+        split = (len(entries) + 1) // 2
         for i, (colour, label, is_star) in enumerate(entries):
+            col_offset = 0 if i < split else 5
+            row = i if i < split else i - split
             swatch = tk.Canvas(
                 legend, width=12, height=12, highlightthickness=0,
             )
-            swatch.grid(row=i, column=0, padx=(0, 4), pady=1, sticky="w")
+            swatch.grid(
+                row=row, column=col_offset,
+                padx=(8 if col_offset else 0, 4), pady=1, sticky="w",
+            )
             if is_star:
                 swatch.create_text(
                     6, 6, text="★", fill=colour, font=("Arial", 8, "bold"),
@@ -194,7 +207,7 @@ class PlaygroundApp:
             else:
                 swatch.create_rectangle(0, 0, 12, 12, fill=colour, outline="")
             tk.Label(legend, text=label, anchor="w", font=("Arial", 8)).grid(
-                row=i, column=1, sticky="w", pady=1,
+                row=row, column=col_offset + 1, sticky="w", pady=1,
             )
 
     def _build_canvas(self) -> None:
@@ -230,19 +243,17 @@ class PlaygroundApp:
             self._draw_survivor_star(survivor.pos)
 
     def _init_drones(self) -> None:
-        """Create triangle polygon canvas items for all agents at their starting positions."""
+        """Create chevron polygon canvas items for all agents at their starting positions."""
         colour = STRATEGY_COLOURS[self.model.strategy]
+        outline = _darken(colour)
         now_ms = time.monotonic() * 1000
         default_heading = -math.pi / 2
 
         for agent in self.model.agents:
             px, py = self._cell_centre(*agent.pos)
-            coords = self._triangle_coords(px, py, DRONE_RADIUS, default_heading)
+            coords = self._chevron_coords(px, py, DRONE_RADIUS, default_heading)
             poly_id = self.canvas.create_polygon(
-                *coords,
-                fill=colour,
-                outline="white",
-                width=1,
+                *coords, fill=colour, outline=outline, width=2,
             )
             self._drone_ovals[agent.unique_id] = poly_id
             self._drone_interp[agent.unique_id] = (px, py, px, py, now_ms)
@@ -280,22 +291,27 @@ class PlaygroundApp:
         return cx + CELL_SIZE / 2, cy + CELL_SIZE / 2
 
     @staticmethod
-    def _triangle_coords(
+    def _chevron_coords(
         cx: float, cy: float, r: float, theta: float
     ) -> list[float]:
         """
-        Return flat [x0,y0, x1,y1, x2,y2] coords for a triangle centred at (cx,cy).
+        Return flat coords for a 4-point chevron (arrowhead) centred at (cx,cy).
 
         Args:
             - cx: Canvas x of centroid.
             - cy: Canvas y of centroid.
-            - r: Radius (half-size) of the triangle.
+            - r: Radius (half-size) of the chevron.
             - theta: Heading angle in radians (canvas coords; 0=right, -π/2=up).
 
         Returns:
-            - Flat list of six floats for canvas.create_polygon / canvas.coords.
+            - Flat list of eight floats for canvas.create_polygon / canvas.coords.
         """
-        pts = [(r * 0.9, 0.0), (-r * 0.55, r * 0.5), (-r * 0.55, -r * 0.5)]
+        pts = [
+            (r * 0.9,   0.0),        # tip
+            (-r * 0.45, r * 0.62),   # back-right wing
+            (r * 0.1,   0.0),        # back notch (concave centre)
+            (-r * 0.45, -r * 0.62),  # back-left wing
+        ]
         cos_t = math.cos(theta)
         sin_t = math.sin(theta)
         result: list[float] = []
@@ -420,7 +436,7 @@ class PlaygroundApp:
                 )
 
     def _render_loop(self) -> None:
-        """Reposition drone triangles and update pheromone overlay at ~60fps."""
+        """Reposition drone chevrons and update pheromone overlay at ~60fps."""
         now_ms = time.monotonic() * 1000
 
         for uid, (old_px, old_py, new_px, new_py, start_ms) in (
@@ -432,7 +448,7 @@ class PlaygroundApp:
             px = old_px + (new_px - old_px) * t
             py = old_py + (new_py - old_py) * t
             heading = self._drone_heading.get(uid, -math.pi / 2)
-            coords = self._triangle_coords(px, py, DRONE_RADIUS, heading)
+            coords = self._chevron_coords(px, py, DRONE_RADIUS, heading)
             self.canvas.coords(self._drone_ovals[uid], *coords)
 
         self._update_pheromone_overlay()
