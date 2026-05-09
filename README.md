@@ -1,5 +1,8 @@
 # Swarm Drone Search & Rescue
 
+![Swarm Drone Search & Rescue](assets/readme-pic.png)
+*Random strategy, swarm size 6, medium hazard, seed 0.*
+
 A swarm of autonomous drone agents explores a 20x20 grid-based disaster site to locate survivors.
 
 The environment is dynamic: fire spreads probabilistically each timestep, agents have partial observability (a sensing radius of 2), and agents can be destroyed by fire. Three core coordination strategies are compared across 810 controlled simulation runs, with additional stretch experiments covering sensor noise, heterogeneous role specialisation, and a single-agent reinforcement learning (RL) baseline.
@@ -113,6 +116,9 @@ This reads from `results/raw/` and produces:
 ```bash
 python visualisation/playground.py
 ```
+
+![Live Visualisation](assets/live-viz-pic.png)
+*Heterogeneous strategy, swarm size 6, slow hazard, seed 0.*
 
 - Opens an animated Tkinter window with a 20x20 grid
 - Use the left panel to select strategy, swarm size, hazard rate, seed, and speed
