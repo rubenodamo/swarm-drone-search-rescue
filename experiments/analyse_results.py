@@ -347,6 +347,55 @@ def plot_agent_losses_boxplot(all_runs: pd.DataFrame) -> None:
     print(f"Saved {out}")
 
 
+def plot_survivors_scaling(summary: pd.DataFrame) -> None:
+    """
+    Saves a faceted line chart of mean survivors found vs swarm size, one panel per hazard rate.
+
+    Args:
+        - summary: DataFrame from compute_summary().
+    """
+    strategies = ["random", "astar", "pheromone"]
+    hazard_rates = ["slow", "medium", "fast"]
+    swarm_sizes = [3, 6, 12]
+
+    fig, axes = plt.subplots(1, 3, figsize=(14, 5), sharey=True)
+
+    for ax, hr in zip(axes, hazard_rates):
+        df = summary[summary["hazard_rate"] == hr]
+        for s in strategies:
+            sdf = (
+                df[df["strategy"] == s]
+                .set_index("swarm_size")
+                .reindex(swarm_sizes)
+            )
+            means = sdf["survivors_found_mean"].values
+            stds = sdf["survivors_found_std"].values
+            color = STRATEGY_COLORS[s]
+            ax.plot(swarm_sizes, means, marker="o", label=s.capitalize(), color=color)
+            ax.fill_between(
+                swarm_sizes,
+                means - stds,
+                means + stds,
+                alpha=0.15,
+                color=color,
+            )
+        ax.set_title(f"Hazard: {hr.capitalize()}")
+        ax.set_xlabel("Swarm Size")
+        ax.set_xticks(swarm_sizes)
+        ax.grid(axis="y", alpha=0.3)
+        ax.set_ylim(0, 10.5)
+
+    axes[0].set_ylabel("Mean Survivors Found")
+    axes[2].legend(title="Strategy")
+    fig.suptitle("Survivors Found vs Swarm Size by Strategy and Hazard Rate", y=1.02)
+
+    fig.tight_layout()
+    out = FIGURES_DIR / "survivors_scaling.png"
+    fig.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out}")
+
+
 def plot_survivors_over_time(timeseries_all: pd.DataFrame) -> None:
     """
     Saves a line chart of mean cumulative survivors found per timestep by strategy.
@@ -454,6 +503,7 @@ def main() -> None:
     plot_survivors_by_strategy(summary)
     plot_coverage_vs_hazard_rate(summary)
     plot_agent_losses_boxplot(all_runs)
+    plot_survivors_scaling(summary)
     timeseries_all = pd.read_csv(TIMESERIES_ALL_PATH)
     plot_survivors_over_time(timeseries_all)
     coverage_mean = pd.read_csv(COVERAGE_MEAN_PATH)
