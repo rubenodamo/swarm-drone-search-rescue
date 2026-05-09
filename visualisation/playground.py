@@ -140,7 +140,7 @@ class PlaygroundApp:
         self._add_option_row(params, 0, "Strategy", self._strategy_var,
                              ["random", "astar", "pheromone", "heterogeneous", "rl"])
         self._add_option_row(params, 1, "Swarm size", self._swarm_var,
-                             ["3", "6", "12"])
+                             ["1", "3", "6", "12"])
         self._add_option_row(params, 2, "Hazard rate", self._hazard_var,
                              ["slow", "medium", "fast"])
         self._add_option_row(params, 3, "Survivor noise", self._survivor_noise_var,
