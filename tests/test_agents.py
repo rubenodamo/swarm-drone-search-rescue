@@ -441,6 +441,33 @@ class TestMedicDrone:
         assert survivor not in model.rescue_queue
         assert medic.target is None
 
+    def test_medic_rescues_nearby_unqueued_survivor(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(6, 5))
+        model.disaster_grid.survivors = [survivor]
+        model.rescue_queue = []
+
+        medic = _place_medic(model, (5, 5))
+        medic.step()
+
+        assert survivor.found is True
+        assert model.survivors_found_count == 1
+
+    def test_medic_does_not_rescue_fire_killed_survivor(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(6, 5))
+        model.disaster_grid.survivors = [survivor]
+        model.disaster_grid.grid_state[6, 5] = CellType.FIRE
+        model.rescue_queue = []
+
+        medic = _place_medic(model, (5, 5))
+        medic.step()
+
+        assert survivor.found is False
+        assert model.survivors_found_count == 0
+
     def test_medic_pheromone_move_every_2_idle_steps(self):
         model = _make_model()
         model.disaster_grid.grid_state[:] = CellType.PASSABLE

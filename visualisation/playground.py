@@ -7,6 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.agents.medic_drone import MedicDrone
+from src.agents.scout_drone import ScoutDrone
 from src.environment.grid import CellType
 from src.model.disaster_model import DisasterModel
 
@@ -24,7 +26,11 @@ STRATEGY_COLOURS: dict[str, str] = {
     "random": "#1f77b4",
     "astar": "#ff7f0e",
     "pheromone": "#2ca02c",
+    "heterogeneous": "#17becf",
 }
+
+_SCOUT_COLOUR = "#17becf"
+_MEDIC_COLOUR = "#e377c2"
 
 _PASSABLE_RGB: tuple[int, int, int] = (0xF0, 0xF0, 0xF0)
 _PHEROMONE_RGB: tuple[int, int, int] = (0x7B, 0x2D, 0x8B)
@@ -122,7 +128,7 @@ class PlaygroundApp:
         params.pack(fill=tk.X, pady=(0, 8))
 
         self._add_option_row(params, 0, "Strategy", self._strategy_var,
-                             ["random", "astar", "pheromone"])
+                             ["random", "astar", "pheromone", "heterogeneous"])
         self._add_option_row(params, 1, "Swarm size", self._swarm_var,
                              ["3", "6", "12"])
         self._add_option_row(params, 2, "Hazard rate", self._hazard_var,
@@ -209,6 +215,8 @@ class PlaygroundApp:
             (STRATEGY_COLOURS["random"], "Random drone", False),
             (STRATEGY_COLOURS["astar"], "A* drone", False),
             (STRATEGY_COLOURS["pheromone"], "Pheromone drone", False),
+            (_SCOUT_COLOUR, "Scout drone", False),
+            (_MEDIC_COLOUR, "Medic drone", False),
         ]
 
         split = (len(entries) + 1) // 2
@@ -264,15 +272,31 @@ class PlaygroundApp:
         for survivor in grid.survivors:
             self._draw_survivor_star(survivor.pos)
 
+    def _agent_colour(self, agent) -> str:
+        """
+        Return the display colour for a drone agent.
+
+        Args:
+            - agent: A DroneAgent subclass instance.
+
+        Returns:
+            - Hex colour string for this agent.
+        """
+        if isinstance(agent, ScoutDrone):
+            return _SCOUT_COLOUR
+        if isinstance(agent, MedicDrone):
+            return _MEDIC_COLOUR
+        return STRATEGY_COLOURS[self.model.strategy]
+
     def _init_drones(self) -> None:
         """Create trail line + chevron polygon canvas items for all agents."""
-        colour = STRATEGY_COLOURS[self.model.strategy]
-        outline = _darken(colour)
-        trail_colour = _lighten(colour)
         now_ms = time.monotonic() * 1000
         default_heading = -math.pi / 2
 
         for agent in self.model.agents:
+            colour = self._agent_colour(agent)
+            outline = _darken(colour)
+            trail_colour = _lighten(colour)
             px, py = self._cell_centre(*agent.pos)
             trail_id = self.canvas.create_line(
                 px, py, px, py,
@@ -444,7 +468,7 @@ class PlaygroundApp:
         Blend passable cell colours toward purple based on pheromone intensity.
         Only active when strategy is pheromone; skips cells with zero pheromone.
         """
-        if self.model.strategy != "pheromone":
+        if self.model.strategy not in ("pheromone", "heterogeneous"):
             return
 
         grid = self.model.disaster_grid
