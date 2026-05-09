@@ -27,11 +27,13 @@ class Survivor:
 
     Attributes:
         - pos: The (x, y) coordinates of the survivor on the grid.
-        - found: Whether the survivor has been located by an agent.
+        - found: Whether the survivor has been rescued by a medic.
+        - detected: Whether a scout has spotted this survivor.
     """
 
     pos: tuple[int, int]
     found: bool = False
+    detected: bool = False
 
 
 class DisasterGrid:

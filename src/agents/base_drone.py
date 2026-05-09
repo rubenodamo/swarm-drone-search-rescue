@@ -10,6 +10,8 @@ class DroneAgent(mesa.Agent):
     Attributes:
         - alive: Whether the agent is currently active.
         - visited_cells: Set of (x, y) positions visited by this agent.
+        - sensing_radius: Manhattan distance radius for survivor detection and observation.
+        - _survivor_bonus: Count added to survivors_found_count per survivor found.
     """
 
     def __init__(self, model: mesa.Model) -> None:
@@ -22,6 +24,8 @@ class DroneAgent(mesa.Agent):
         super().__init__(model)
         self.alive: bool = True
         self.visited_cells: set[tuple[int, int]] = set()
+        self.sensing_radius: int = 2
+        self._survivor_bonus: int = 1
 
     def get_passable_neighbours(
         self, pos: tuple[int, int]
@@ -39,7 +43,7 @@ class DroneAgent(mesa.Agent):
 
     def get_local_observation(self) -> dict[tuple[int, int], int]:
         """
-        Returns cell states within Manhattan distance 2 of current position.
+        Returns cell states within sensing_radius of current position.
 
         Returns:
             - Dict mapping (x, y) positions to their CellType integer values.
@@ -47,10 +51,11 @@ class DroneAgent(mesa.Agent):
         x, y = self.pos
         width = self.model.disaster_grid.width
         height = self.model.disaster_grid.height
+        r = self.sensing_radius
         observation: dict[tuple[int, int], int] = {}
-        for dx in range(-2, 3):
-            for dy in range(-2, 3):
-                if abs(dx) + abs(dy) <= 2:
+        for dx in range(-r, r + 1):
+            for dy in range(-r, r + 1):
+                if abs(dx) + abs(dy) <= r:
                     nx, ny = x + dx, y + dy
                     if 0 <= nx < width and 0 <= ny < height:
                         observation[(nx, ny)] = int(
@@ -103,10 +108,11 @@ class DroneAgent(mesa.Agent):
 
     def detect_survivors(self) -> None:
         """
-        Finds and marks as found any survivors within Manhattan distance 2.
+        Finds and marks as found any survivors within sensing_radius.
 
         Each in-range survivor is missed with probability
-        model.survivor_detection_noise (false negative).
+        model.survivor_detection_noise (false negative). Finding a survivor
+        adds self._survivor_bonus to survivors_found_count.
         """
         noise = self.model.survivor_detection_noise
         x, y = self.pos
@@ -114,11 +120,11 @@ class DroneAgent(mesa.Agent):
             if survivor.found:
                 continue
             sx, sy = survivor.pos
-            if abs(x - sx) + abs(y - sy) <= 2:
+            if abs(x - sx) + abs(y - sy) <= self.sensing_radius:
                 if noise > 0.0 and self.model.rng.random() < noise:
                     continue
                 survivor.found = True
-                self.model.survivors_found_count += 1
+                self.model.survivors_found_count += self._survivor_bonus
 
     def move_to(self, new_pos: tuple[int, int]) -> None:
         """

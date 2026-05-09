@@ -2,8 +2,10 @@ import pytest
 
 from src.agents.astar_drone import AStarDrone
 from src.agents.base_drone import DroneAgent
+from src.agents.medic_drone import MedicDrone
 from src.agents.pheromone_drone import PheromoneDrone
 from src.agents.random_drone import RandomDrone
+from src.agents.scout_drone import ScoutDrone
 from src.environment.grid import CellType, Survivor
 from src.model.disaster_model import DisasterModel
 
@@ -320,3 +322,170 @@ class TestPheromoneDrone:
             return positions
 
         assert _run(0) == _run(0)
+
+def _make_hetero_model(seed: int = 42) -> DisasterModel:
+    return DisasterModel(
+        strategy="heterogeneous", swarm_size=6, hazard_rate="medium", seed=seed
+    )
+
+
+def _place_scout(model: DisasterModel, pos: tuple[int, int]) -> ScoutDrone:
+    model.disaster_grid.grid_state[pos] = CellType.PASSABLE
+    scout = ScoutDrone(model)
+    model.disaster_grid.grid.place_agent(scout, pos)
+    return scout
+
+
+def _place_medic(model: DisasterModel, pos: tuple[int, int]) -> MedicDrone:
+    model.disaster_grid.grid_state[pos] = CellType.PASSABLE
+    medic = MedicDrone(model)
+    model.disaster_grid.grid.place_agent(medic, pos)
+    return medic
+
+
+class TestScoutDrone:
+    """Tests for ScoutDrone: detect survivors into rescue_queue."""
+
+    def test_sensing_radius_is_3(self):
+        model = _make_model()
+        scout = _place_scout(model, (5, 5))
+        assert scout.sensing_radius == 3
+
+    def test_scout_adds_to_rescue_queue_on_detection(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(7, 5))
+        model.disaster_grid.survivors = [survivor]
+
+        scout = _place_scout(model, (5, 5))
+        scout._detect_and_queue_survivors()
+
+        assert survivor in model.rescue_queue
+        assert survivor.detected is True
+
+    def test_scout_does_not_increment_survivors_found_count(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(6, 5))
+        model.disaster_grid.survivors = [survivor]
+
+        scout = _place_scout(model, (5, 5))
+        scout.step()
+
+        assert model.survivors_found_count == 0
+        assert not survivor.found
+
+    def test_scout_does_not_double_queue_already_detected_survivor(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(6, 5), detected=True)
+        model.disaster_grid.survivors = [survivor]
+        model.rescue_queue = [survivor]
+
+        scout = _place_scout(model, (5, 5))
+        scout._detect_and_queue_survivors()
+
+        assert model.rescue_queue.count(survivor) == 1
+
+
+class TestMedicDrone:
+    """Tests for MedicDrone: A* navigation, rescue, fallback pheromone."""
+
+    def test_sensing_radius_is_2(self):
+        model = _make_model()
+        medic = _place_medic(model, (5, 5))
+        assert medic.sensing_radius == 2
+
+    def test_medic_rescues_survivor_marks_found_and_increments_count(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(5, 5), detected=True)
+        model.disaster_grid.survivors = [survivor]
+        model.rescue_queue = [survivor]
+
+        medic = _place_medic(model, (5, 5))
+        medic.target = survivor
+
+        medic.step()
+
+        assert survivor.found is True
+        assert model.survivors_found_count == 1
+
+    def test_medic_clears_survivor_from_queue_after_rescue(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(5, 5), detected=True)
+        model.disaster_grid.survivors = [survivor]
+        model.rescue_queue = [survivor]
+
+        medic = _place_medic(model, (5, 5))
+        medic.target = survivor
+        medic.step()
+
+        assert survivor not in model.rescue_queue
+        assert medic.target is None
+
+    def test_fire_on_detected_survivor_removes_from_queue_and_frees_medic(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        survivor = Survivor(pos=(10, 10), detected=True)
+        model.disaster_grid.survivors = [survivor]
+        model.rescue_queue = [survivor]
+
+        medic = _place_medic(model, (5, 5))
+        medic.target = survivor
+
+        model.disaster_grid.grid_state[10, 10] = CellType.FIRE
+        model.check_survivor_losses()
+
+        assert survivor not in model.rescue_queue
+        assert medic.target is None
+
+    def test_medic_pheromone_move_every_2_idle_steps(self):
+        model = _make_model()
+        model.disaster_grid.grid_state[:] = CellType.PASSABLE
+        model.rescue_queue = []
+
+        medic = _place_medic(model, (5, 5))
+
+        initial_pos = medic.pos
+        medic.step()
+        pos_after_step1 = medic.pos
+
+        medic.step()
+        pos_after_step2 = medic.pos
+
+        assert pos_after_step1 == initial_pos
+        assert pos_after_step2 != initial_pos
+
+
+class TestHeterogeneousModel:
+    """Tests for DisasterModel with strategy='heterogeneous'."""
+
+    def test_swarm_size_6_gives_4_scouts_and_2_medics(self):
+        model = _make_hetero_model()
+        scouts = [a for a in model.agents if isinstance(a, ScoutDrone)]
+        medics = [a for a in model.agents if isinstance(a, MedicDrone)]
+        assert len(scouts) == 4
+        assert len(medics) == 2
+
+    def test_swarm_size_3_gives_2_scouts_and_1_medic(self):
+        model = DisasterModel(
+            strategy="heterogeneous", swarm_size=3, hazard_rate="medium", seed=0
+        )
+        scouts = [a for a in model.agents if isinstance(a, ScoutDrone)]
+        medics = [a for a in model.agents if isinstance(a, MedicDrone)]
+        assert len(scouts) == 2
+        assert len(medics) == 1
+
+    def test_hetero_run_completes_without_error(self):
+        model = _make_hetero_model()
+        while not model.is_done:
+            model.step()
+        assert model.timestep > 0
+
+    def test_hetero_run_survivors_found_count_greater_than_zero(self):
+        model = _make_hetero_model(seed=0)
+        while not model.is_done:
+            model.step()
+        assert model.survivors_found_count > 0
