@@ -5,12 +5,19 @@ import tkinter as tk
 from collections import deque
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from stable_baselines3 import PPO
 
 from src.agents.medic_drone import MedicDrone
 from src.agents.scout_drone import ScoutDrone
 from src.environment.grid import CellType
 from src.model.disaster_model import DisasterModel
+
+_RL_MODEL_PATH = Path(__file__).parent.parent / "results" / "rl_model" / "ppo_drone_search.zip"
+_PHEROMONE_MAX: float = 20.0
 
 CELL_SIZE = 28
 PADDING = 10
@@ -27,6 +34,7 @@ STRATEGY_COLOURS: dict[str, str] = {
     "astar": "#ff7f0e",
     "pheromone": "#2ca02c",
     "heterogeneous": "#17becf",
+    "rl": "#d62728",
 }
 
 _SCOUT_COLOUR = "#17becf"
@@ -86,6 +94,8 @@ class PlaygroundApp:
         self._drone_interp: dict[int, tuple[float, float, float, float, float]] = {}
         self._drone_heading: dict[int, float] = {}
 
+        self._ppo_model: PPO | None = None
+
         self._strategy_var = tk.StringVar(value="random")
         self._swarm_var = tk.StringVar(value="6")
         self._hazard_var = tk.StringVar(value="medium")
@@ -128,7 +138,7 @@ class PlaygroundApp:
         params.pack(fill=tk.X, pady=(0, 8))
 
         self._add_option_row(params, 0, "Strategy", self._strategy_var,
-                             ["random", "astar", "pheromone", "heterogeneous"])
+                             ["random", "astar", "pheromone", "heterogeneous", "rl"])
         self._add_option_row(params, 1, "Swarm size", self._swarm_var,
                              ["3", "6", "12"])
         self._add_option_row(params, 2, "Hazard rate", self._hazard_var,
@@ -217,6 +227,7 @@ class PlaygroundApp:
             (STRATEGY_COLOURS["pheromone"], "Pheromone drone", False),
             (_SCOUT_COLOUR, "Scout drone", False),
             (_MEDIC_COLOUR, "Medic drone", False),
+            (STRATEGY_COLOURS["rl"], "RL drone", False),
         ]
 
         split = (len(entries) + 1) // 2
@@ -421,6 +432,48 @@ class PlaygroundApp:
         self._do_step()
         self._schedule_sim()
 
+    def _get_rl_obs(self, drone) -> np.ndarray:
+        """
+        Build the 100-dim flattened observation for an RLDrone.
+
+        Args:
+            - drone: The RLDrone agent to observe from.
+
+        Returns:
+            - Flattened np.ndarray of shape (100,) matching the training obs space.
+        """
+        cx, cy = drone.pos
+        grid_state = self.model.disaster_grid.grid_state
+        pheromone = self.model.pheromone_grid
+        width = self.model.disaster_grid.width
+        height = self.model.disaster_grid.height
+        visited = drone.visited_cells
+        survivor_positions = {
+            s.pos for s in self.model.disaster_grid.survivors if not s.found
+        }
+        obs = np.zeros((4, 5, 5), dtype=np.float32)
+        for di, dx in enumerate(range(-2, 3)):
+            for dj, dy in enumerate(range(-2, 3)):
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < width and 0 <= ny < height:
+                    obs[0, di, dj] = grid_state[nx, ny] / 2.0
+                    obs[1, di, dj] = min(pheromone[nx, ny] / _PHEROMONE_MAX, 1.0)
+                    obs[2, di, dj] = 1.0 if (nx, ny) in survivor_positions else 0.0
+                    obs[3, di, dj] = 1.0 if (nx, ny) in visited else 0.0
+                else:
+                    obs[0, di, dj] = 0.5
+        return obs.flatten()
+
+    def _set_rl_action(self) -> None:
+        """Predict and assign the next action for the RL drone before model.step()."""
+        agents = list(self.model.agents)
+        if not agents or self._ppo_model is None:
+            return
+        drone = agents[0]
+        obs = self._get_rl_obs(drone)
+        action, _ = self._ppo_model.predict(obs, deterministic=True)
+        drone.pending_action = int(action)
+
     def _do_step(self) -> None:
         """Execute one model step and update the canvas."""
         if self.model.is_done:
@@ -429,6 +482,9 @@ class PlaygroundApp:
         old_positions = {
             agent.unique_id: agent.pos for agent in self.model.agents
         }
+
+        if self.model.strategy == "rl":
+            self._set_rl_action()
 
         self.model.step()
         self.update_cells()
@@ -566,9 +622,17 @@ class PlaygroundApp:
             self.canvas.delete(item_id)
         self._survivor_items.clear()
 
+        strategy = self._strategy_var.get()
+        if strategy == "rl":
+            if self._ppo_model is None:
+                self._ppo_model = PPO.load(str(_RL_MODEL_PATH))
+            swarm_size = 1
+        else:
+            swarm_size = int(self._swarm_var.get())
+
         self.model = DisasterModel(
-            strategy=self._strategy_var.get(),
-            swarm_size=int(self._swarm_var.get()),
+            strategy=strategy,
+            swarm_size=swarm_size,
             hazard_rate=self._hazard_var.get(),
             seed=self._seed_var.get(),
             survivor_detection_noise=float(self._survivor_noise_var.get()),
