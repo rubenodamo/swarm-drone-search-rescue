@@ -7,6 +7,7 @@ from src.agents.astar_drone import AStarDrone
 from src.agents.medic_drone import MedicDrone
 from src.agents.pheromone_drone import PheromoneDrone
 from src.agents.random_drone import RandomDrone
+from src.agents.rl_drone import RLDrone
 from src.agents.scout_drone import ScoutDrone
 from src.environment.grid import CellType, DisasterGrid
 
@@ -20,6 +21,7 @@ _STRATEGY_MAP: dict[str, type] = {
     "random": RandomDrone,
     "astar": AStarDrone,
     "pheromone": PheromoneDrone,
+    "rl": RLDrone,
 }
 
 
