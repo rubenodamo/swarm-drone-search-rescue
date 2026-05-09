@@ -68,7 +68,7 @@ def write_csv(summary: dict, path: Path) -> None:
                 otherwise the row is appended.
     """
     write_header = not path.exists()
-    with open(path, "a", newline="") as f:
+    with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(summary.keys()))
         if write_header:
             writer.writeheader()

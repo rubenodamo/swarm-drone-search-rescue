@@ -7,7 +7,7 @@ from src.strategies.astar import astar
 
 class MedicDrone(DroneAgent):
     """
-    MedicDrone: A drone specialised in rescuing survivors by navigating to them and marking them as found.
+    A drone specialised in rescuing survivors by navigating to them.
 
     Attributes:
         - alive: Whether the agent is currently active.
@@ -30,6 +30,13 @@ class MedicDrone(DroneAgent):
         self.target: Survivor | None = None
         self._current_path: list[tuple[int, int]] = []
         self._idle_step: int = 0
+
+    def clear_assignment(self) -> None:
+        """
+        Clears the current target and path.
+        """
+        self.target = None
+        self._current_path = []
 
     def _assigned_survivor_ids(self) -> set[int]:
         """

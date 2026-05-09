@@ -69,7 +69,8 @@ class AStarDrone(DroneAgent):
 
     def step(self) -> None:
         """
-        Navigates to the nearest frontier via A*; falls back to random if no frontier exists.
+        Navigates to the nearest frontier via A*;
+        falls back to random if no frontier exists.
         """
         grid_state = self.model.disaster_grid.grid_state
         hazard_noise = self.model.hazard_detection_noise

@@ -10,8 +10,8 @@ class DroneAgent(mesa.Agent):
     Attributes:
         - alive: Whether the agent is currently active.
         - visited_cells: Set of (x, y) positions visited by this agent.
-        - sensing_radius: Manhattan distance radius for survivor detection and observation.
-        - _survivor_bonus: Count added to survivors_found_count per survivor found.
+        - sensing_radius: Manhattan radius for survivor detection.
+        - _survivor_bonus: Added to survivors_found_count per survivor found.
     """
 
     def __init__(self, model: mesa.Model) -> None:
@@ -120,7 +120,7 @@ class DroneAgent(mesa.Agent):
 
     def move_to(self, new_pos: tuple[int, int]) -> None:
         """
-        Moves the agent to a new position, raising only if the target is an obstacle.
+        Moves the agent to new_pos, raising if the target is an obstacle.
 
         Args:
             - new_pos: The target (x, y) position.

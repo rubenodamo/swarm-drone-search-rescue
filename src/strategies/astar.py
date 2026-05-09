@@ -14,7 +14,8 @@ def astar(
     Find shortest path from start to goal avoiding obstacles and fire.
 
     Args:
-        - passable_mask: 2D bool array; True where cells are passable (not OBSTACLE).
+        - passable_mask: 2D bool array; True where cells are
+          passable (not OBSTACLE).
         - fire_mask: 2D bool array; True where cells are on FIRE.
         - start: (x, y) starting position (excluded from returned path).
         - goal: (x, y) target position (included in returned path).
@@ -91,7 +92,8 @@ def get_nearest_frontier(
     Args:
         - pos: (x, y) current agent position.
         - visited_cells: set of (x, y) cells already visited.
-        - grid_state: 2D int array of CellType values (PASSABLE=0, OBSTACLE=1, FIRE=2).
+        - grid_state: 2D int array of CellType values
+          (PASSABLE=0, OBSTACLE=1, FIRE=2).
 
     Returns:
         - (x, y) of nearest frontier cell, or None if no frontier exists.

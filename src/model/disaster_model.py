@@ -30,13 +30,17 @@ class DisasterModel(mesa.Model):
     Central coordinator for the disaster simulation.
 
     Attributes:
-        - strategy: Search strategy name ('random', 'astar', 'pheromone', 'heterogeneous').
+        - strategy: Search strategy name ('random', 'astar',
+          'pheromone', 'heterogeneous').
         - swarm_size: Number of drone agents.
         - hazard_rate: Named hazard level ('slow', 'medium', 'fast').
-        - survivor_detection_noise: Per-survivor miss probability when in sensing range.
-        - hazard_detection_noise: Probability a drone fails to perceive an adjacent fire cell.
+        - survivor_detection_noise: Per-survivor miss probability
+          when in sensing range.
+        - hazard_detection_noise: Probability a fire cell is
+          misperceived as passable.
         - disaster_grid: The DisasterGrid environment.
-        - pheromone_grid: Shared pheromone values updated by pheromone-based agents.
+        - pheromone_grid: Shared pheromone values updated by
+          pheromone-based agents.
         - coverage_grid: Per-cell visit counts across all agents.
         - rescue_queue: Survivors detected by scouts but not yet rescued.
         - agents_lost: Count of agents removed due to fire.
@@ -59,14 +63,17 @@ class DisasterModel(mesa.Model):
         Initialises the disaster model.
 
         Args:
-            - strategy: Search strategy ('random', 'astar', 'pheromone', 'heterogeneous').
+            - strategy: Search strategy ('random', 'astar',
+              'pheromone', 'heterogeneous').
             - swarm_size: Number of drone agents to deploy.
             - hazard_rate: Fire spread rate ('slow', 'medium', 'fast').
             - seed: Random seed for reproducibility.
             - width: Grid width in cells.
             - height: Grid height in cells.
-            - survivor_detection_noise: Per-survivor miss probability (0.0 = perfect, 1.0 = blind).
-            - hazard_detection_noise: Per-fire-cell miss probability (0.0 = perfect, 1.0 = blind).
+            - survivor_detection_noise: Per-survivor miss probability
+              (0.0 = perfect, 1.0 = blind).
+            - hazard_detection_noise: Per-fire-cell miss probability
+              (0.0 = perfect, 1.0 = blind).
         """
         super().__init__(rng=seed)
         self.rng = np.random.default_rng(seed)
@@ -145,7 +152,8 @@ class DisasterModel(mesa.Model):
 
     def check_survivor_losses(self) -> None:
         """
-        Remove survivors on FIRE cells from rescue_queue and free assigned medics.
+        Remove survivors on FIRE cells from rescue_queue;
+        free any assigned medics.
         """
         lost = [
             s
@@ -156,8 +164,7 @@ class DisasterModel(mesa.Model):
             self.rescue_queue.remove(survivor)
             for agent in list(self.agents):
                 if isinstance(agent, MedicDrone) and agent.target is survivor:
-                    agent.target = None
-                    agent._current_path = []
+                    agent.clear_assignment()
 
     def check_agent_deaths(self) -> None:
         """

@@ -3,7 +3,7 @@ from src.agents.base_drone import DroneAgent
 
 class ScoutDrone(DroneAgent):
     """
-    ScoutDrone: A drone specialised in exploring the environment and detecting survivors.
+    A drone specialised in exploring the environment and detecting survivors.
 
     Attributes:
         - alive: Whether the agent is currently active.

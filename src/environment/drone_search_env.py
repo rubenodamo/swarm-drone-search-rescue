@@ -13,14 +13,16 @@ class DroneSearchEnv(gym.Env):
     """
     Gymnasium environment wrapping a single-drone DisasterModel.
 
-    Observation space: Box(0, 1, shape=(100,), dtype=np.float32) -- 4 channels of 5x5 local grid: cell type, pheromone level, survivor presence, visited status.
-    Action space: Discrete(5) -- Stay, N, S, E, W
+    Observation space: Box(0, 1, shape=(100,), dtype=np.float32).
+    Four 5x5 channels: cell type, pheromone level, survivor presence,
+    visited flag.
+    Action space: Discrete(5) -- Stay, N, S, E, W.
 
     Attributes:
         - model: The DisasterModel instance for the current episode.
         - _drone: Reference to the single DroneAgent in the model.
         - _episode_seed: Seed for reproducibility of the current episode.
-        - _ep_repeated_visits: Cumulative count of steps with no new cell visited.
+        - _ep_repeated_visits: Steps taken with no new cell visited.
         - _ep_invalid_actions: Cumulative count of blocked movement attempts.
         - _ep_action_counts: Cumulative count of each action taken (0-4).
     """
@@ -59,7 +61,12 @@ class DroneSearchEnv(gym.Env):
         self._ep_invalid_actions: int = 0
         self._ep_action_counts: dict[int, int] = {i: 0 for i in range(5)}
 
-    def reset(
+    def render(self) -> None:
+        """
+        No-op render; this environment has no visual output.
+        """
+
+    def reset(  # pylint: disable=arguments-differ
         self,
         seed: int | None = None,
         options: dict | None = None,
