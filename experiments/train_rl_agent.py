@@ -9,7 +9,7 @@ import pandas as pd
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from experiments.drone_search_env import DroneSearchEnv
+from src.environment.drone_search_env import DroneSearchEnv
 from src.environment.grid import CellType
 from src.metrics.collector import MetricsCollector
 from src.model.disaster_model import DisasterModel

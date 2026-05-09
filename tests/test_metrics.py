@@ -31,7 +31,9 @@ def _run_model(strategy="random", swarm_size=3, seed=0, steps=10):
 
 
 class TestMetricsCollector:
-    """Tests for MetricsCollector.get_summary()."""
+    """
+    Tests for MetricsCollector.get_summary().
+    """
 
     def test_all_fields_present_after_run(self):
         model = _run_model()
@@ -73,7 +75,9 @@ class TestMetricsCollector:
 
 
 class TestWriteCsv:
-    """Tests for write_csv()."""
+    """
+    Tests for write_csv().
+    """
 
     def test_csv_written_with_correct_values(self, tmp_path):
         path = tmp_path / "out.csv"

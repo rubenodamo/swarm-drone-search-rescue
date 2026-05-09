@@ -1,5 +1,5 @@
-import pytest
 import pandas as pd
+import pytest
 
 from experiments.run_hetero_experiment import (
     HETERO_CSV,
@@ -14,7 +14,9 @@ def hetero_df() -> pd.DataFrame:
 
 
 class TestHeteroCSV:
-    """Tests for results/hetero_runs.csv structure."""
+    """
+    Tests for results/hetero_runs.csv structure.
+    """
 
     def test_csv_has_60_rows(self, hetero_df: pd.DataFrame):
         assert len(hetero_df) == len(STRATEGIES) * 30
@@ -30,7 +32,9 @@ class TestHeteroCSV:
 
 
 class TestHeteroChart:
-    """Tests for plot_hetero_comparison()."""
+    """
+    Tests for plot_hetero_comparison().
+    """
 
     def test_figure_exists_and_is_large_enough(
         self, hetero_df: pd.DataFrame, tmp_path: pytest.TempPathFactory

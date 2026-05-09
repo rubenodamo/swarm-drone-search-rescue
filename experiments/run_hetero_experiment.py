@@ -108,10 +108,7 @@ def run_hetero_experiment() -> pd.DataFrame:
                     row = _run_single(strategy, seed)
                     writer.writerow(row)
                 except Exception:
-                    msg = (
-                        f"FAILED: {run_name}\n"
-                        f"{traceback.format_exc()}\n"
-                    )
+                    msg = f"FAILED: {run_name}\n" f"{traceback.format_exc()}\n"
                     print(msg, file=sys.stderr)
                     with open(ERRORS_LOG, "a") as ef:
                         ef.write(msg)
@@ -162,10 +159,8 @@ def plot_hetero_comparison(
 
     ax.set_xticks(x)
     ax.set_xticklabels(metric_labels)
-    ax.set_ylabel("Mean value (±1 SD, 30 seeds)")
-    ax.set_title(
-        "Heterogeneous vs Pheromone Swarm (swarm=6, hazard=medium)"
-    )
+    ax.set_ylabel("Mean value (+/-1 SD, 30 seeds)")
+    ax.set_title("Heterogeneous vs Pheromone Swarm (swarm=6, hazard=medium)")
     ax.legend()
     ax.grid(True, alpha=0.3, axis="y")
     ax.set_ylim(0, None)

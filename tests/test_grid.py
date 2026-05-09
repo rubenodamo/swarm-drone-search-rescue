@@ -14,7 +14,9 @@ def grid() -> DisasterGrid:
 
 
 class TestDisasterGridInit:
-    """Tests for DisasterGrid initialisation."""
+    """
+    Tests for DisasterGrid initialisation.
+    """
 
     def test_dimensions(self) -> None:
         g = DisasterGrid(20, 20, seed=0)
@@ -29,7 +31,9 @@ class TestDisasterGridInit:
 
 
 class TestObstaclePlacement:
-    """Tests for DisasterGrid.place_obstacles()."""
+    """
+    Tests for DisasterGrid.place_obstacles().
+    """
 
     def test_obstacle_count(self, grid: DisasterGrid) -> None:
         assert (grid.grid_state == CellType.OBSTACLE).sum() == 60
@@ -46,7 +50,9 @@ class TestObstaclePlacement:
 
 
 class TestSurvivorPlacement:
-    """Tests for DisasterGrid.place_survivors()."""
+    """
+    Tests for DisasterGrid.place_survivors().
+    """
 
     def test_survivor_count(self, grid: DisasterGrid) -> None:
         assert len(grid.survivors) == 10
@@ -63,7 +69,9 @@ class TestSurvivorPlacement:
 
 
 class TestFireSeeds:
-    """Tests for DisasterGrid.place_fire_seeds()."""
+    """
+    Tests for DisasterGrid.place_fire_seeds().
+    """
 
     def test_fire_count(self, grid: DisasterGrid) -> None:
         assert (grid.grid_state == CellType.FIRE).sum() == 3
@@ -77,7 +85,9 @@ class TestFireSeeds:
 
 
 class TestFireSpread:
-    """Tests for DisasterGrid.spread_fire()."""
+    """
+    Tests for DisasterGrid.spread_fire().
+    """
 
     def test_spread_at_p1_covers_neighbours(self) -> None:
         g = DisasterGrid(5, 5, seed=0)

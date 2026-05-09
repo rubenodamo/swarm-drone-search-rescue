@@ -17,7 +17,9 @@ def _make_masks(
 
 
 class TestAstar:
-    """Tests for astar()."""
+    """
+    Tests for astar().
+    """
 
     def test_finds_path_on_open_grid(self):
         passable, fire = _make_masks(5, 5)
@@ -61,7 +63,9 @@ class TestAstar:
 
 
 class TestGetNearestFrontier:
-    """Tests for get_nearest_frontier()."""
+    """
+    Tests for get_nearest_frontier().
+    """
 
     def _make_grid_state(
         self,

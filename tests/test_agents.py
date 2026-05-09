@@ -11,7 +11,9 @@ from src.model.disaster_model import DisasterModel
 
 
 class _ConcreteDrone(DroneAgent):
-    """Concrete drone subclass for testing base class methods."""
+    """
+    Concrete drone subclass for testing base class methods.
+    """
 
     def step(self) -> None:
         self.detect_survivors()
@@ -31,7 +33,9 @@ def _place_drone(model: DisasterModel, pos: tuple[int, int]) -> _ConcreteDrone:
 
 
 class TestGetLocalObservation:
-    """Tests for DroneAgent.get_local_observation()."""
+    """
+    Tests for DroneAgent.get_local_observation().
+    """
 
     def test_returns_cells_within_manhattan_distance_2(self):
         model = _make_model()
@@ -58,7 +62,9 @@ class TestGetLocalObservation:
 
 
 class TestSurvivorDetection:
-    """Tests for DroneAgent.detect_survivors()."""
+    """
+    Tests for DroneAgent.detect_survivors().
+    """
 
     def test_survivor_within_radius_is_found(self):
         model = _make_model()
@@ -85,7 +91,9 @@ class TestSurvivorDetection:
 
 
 class TestSurvivorDetectionNoise:
-    """Tests for DroneAgent.detect_survivors() with survivor_detection_noise."""
+    """
+    Tests for DroneAgent.detect_survivors() with survivor_detection_noise.
+    """
 
     def test_survivor_noise_1_never_detects(self):
         model = DisasterModel(
@@ -118,7 +126,9 @@ class TestSurvivorDetectionNoise:
 
 
 class TestHazardDetectionNoise:
-    """Tests for DroneAgent.get_perceived_neighbours() with hazard_detection_noise."""
+    """
+    Tests for DroneAgent.get_perceived_neighbours() with hazard_detection_noise.
+    """
 
     def test_hazard_noise_0_excludes_fire_neighbours(self):
         model = DisasterModel(
@@ -146,7 +156,9 @@ class TestHazardDetectionNoise:
 
 
 class TestMoveTo:
-    """Tests for DroneAgent.move_to()."""
+    """
+    Tests for DroneAgent.move_to().
+    """
 
     def test_move_to_updates_position(self):
         model = _make_model()
@@ -179,7 +191,9 @@ class TestMoveTo:
 
 
 class TestRandomDrone:
-    """Tests for RandomDrone.step()."""
+    """
+    Tests for RandomDrone.step().
+    """
 
     def test_trajectory_is_reproducible_with_same_seed(self):
         def _run(seed: int) -> list[tuple[int, int]]:
@@ -217,7 +231,9 @@ def _place_astar_drone(
 
 
 class TestAStarDrone:
-    """Tests for AStarDrone.step()."""
+    """
+    Tests for AStarDrone.step().
+    """
 
     def test_agent_moves_to_frontier_in_open_grid(self):
         model = _make_model()
@@ -283,7 +299,9 @@ def _place_pheromone_drone(
 
 
 class TestPheromoneDrone:
-    """Tests for PheromoneDrone.step()."""
+    """
+    Tests for PheromoneDrone.step().
+    """
 
     def test_agent_avoids_high_pheromone_neighbour(self):
         model = _make_model()
@@ -323,6 +341,7 @@ class TestPheromoneDrone:
 
         assert _run(0) == _run(0)
 
+
 def _make_hetero_model(seed: int = 42) -> DisasterModel:
     return DisasterModel(
         strategy="heterogeneous", swarm_size=6, hazard_rate="medium", seed=seed
@@ -344,7 +363,9 @@ def _place_medic(model: DisasterModel, pos: tuple[int, int]) -> MedicDrone:
 
 
 class TestScoutDrone:
-    """Tests for ScoutDrone: detect survivors into rescue_queue."""
+    """
+    Tests for ScoutDrone: detect survivors into rescue_queue.
+    """
 
     def test_sensing_radius_is_3(self):
         model = _make_model()
@@ -389,7 +410,9 @@ class TestScoutDrone:
 
 
 class TestMedicDrone:
-    """Tests for MedicDrone: A* navigation, rescue, fallback pheromone."""
+    """
+    Tests for MedicDrone: A* navigation, rescue, fallback pheromone.
+    """
 
     def test_sensing_radius_is_2(self):
         model = _make_model()
@@ -487,7 +510,9 @@ class TestMedicDrone:
 
 
 class TestHeterogeneousModel:
-    """Tests for DisasterModel with strategy='heterogeneous'."""
+    """
+    Tests for DisasterModel with strategy='heterogeneous'.
+    """
 
     def test_swarm_size_6_gives_4_scouts_and_2_medics(self):
         model = _make_hetero_model()

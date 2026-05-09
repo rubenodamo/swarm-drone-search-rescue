@@ -6,7 +6,6 @@ from gymnasium import spaces
 
 from src.model.disaster_model import DisasterModel
 
-# Steady-state pheromone ceiling: 1 / (1 - evaporation_rate) = 1 / 0.05 = 20
 _PHEROMONE_MAX: float = 20.0
 
 
@@ -14,14 +13,16 @@ class DroneSearchEnv(gym.Env):
     """
     Gymnasium environment wrapping a single-drone DisasterModel.
 
+    Observation space: Box(0, 1, shape=(100,), dtype=np.float32) -- 4 channels of 5x5 local grid: cell type, pheromone level, survivor presence, visited status.
+    Action space: Discrete(5) -- Stay, N, S, E, W
+
     Attributes:
-        - hazard_rate: Named hazard level passed to DisasterModel.
-        - observation_space: Box(0, 1, shape=(100,), float32). Four 5x5 channels:
-            channel 0 - cell type (0=passable, 0.5=obstacle, 1=fire);
-            channel 1 - pheromone intensity (normalised to [0, 1]);
-            channel 2 - survivor present (1 if unfound survivor at cell);
-            channel 3 - visited (1 if this agent has visited this cell).
-        - action_space: Discrete(5).
+        - model: The DisasterModel instance for the current episode.
+        - _drone: Reference to the single DroneAgent in the model.
+        - _episode_seed: Seed for reproducibility of the current episode.
+        - _ep_repeated_visits: Cumulative count of steps with no new cell visited.
+        - _ep_invalid_actions: Cumulative count of blocked movement attempts.
+        - _ep_action_counts: Cumulative count of each action taken (0-4).
     """
 
     metadata: dict = {"render_modes": []}
@@ -74,7 +75,9 @@ class DroneSearchEnv(gym.Env):
             - Tuple of (observation array of shape (75,), info dict).
         """
         super().reset(seed=seed)
-        self._episode_seed = seed if seed is not None else self._episode_seed + 1
+        self._episode_seed = (
+            seed if seed is not None else self._episode_seed + 1
+        )
 
         self.model = DisasterModel(
             strategy="rl",
@@ -118,7 +121,6 @@ class DroneSearchEnv(gym.Env):
 
         prev_found = self.model.survivors_found_count
         prev_visited = frozenset(self._drone.visited_cells)
-        # Capture position before step; after death pos becomes None
         prev_pos = self._drone.pos
         drone_was_alive = self._drone in list(self.model.agents)
 
@@ -131,9 +133,7 @@ class DroneSearchEnv(gym.Env):
 
         if drone_alive:
             new_cells = len(self._drone.visited_cells - prev_visited)
-            # No new cell explored: idling or revisiting a known cell
             repeated_cell = 1 if new_cells == 0 else 0
-            # Non-Stay action that left position unchanged: blocked by obstacle/fire/boundary
             invalid_action = int(action != 0 and self._drone.pos == prev_pos)
         else:
             new_cells = 0
@@ -149,10 +149,11 @@ class DroneSearchEnv(gym.Env):
             - (10.0 if agent_died else 0.0)
         )
 
-        # Update episode accumulators
         self._ep_repeated_visits += repeated_cell
         self._ep_invalid_actions += invalid_action
-        self._ep_action_counts[action] = self._ep_action_counts.get(action, 0) + 1
+        self._ep_action_counts[action] = (
+            self._ep_action_counts.get(action, 0) + 1
+        )
 
         all_found = self.model.survivors_found_count >= len(
             self.model.disaster_grid.survivors
@@ -161,9 +162,7 @@ class DroneSearchEnv(gym.Env):
         truncated = (not terminated) and self.model.timestep >= 200
 
         obs = (
-            self._get_obs()
-            if drone_alive
-            else np.zeros(100, dtype=np.float32)
+            self._get_obs() if drone_alive else np.zeros(100, dtype=np.float32)
         )
 
         unique_cells = (

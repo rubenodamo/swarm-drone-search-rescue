@@ -1,15 +1,19 @@
-"""Tests for DroneSearchEnv and RLDrone."""
+"""
+Tests for DroneSearchEnv and RLDrone.
+"""
 
 import numpy as np
 import pytest
 
-from experiments.drone_search_env import DroneSearchEnv
 from src.agents.rl_drone import RLDrone
+from src.environment.drone_search_env import DroneSearchEnv
 from src.model.disaster_model import DisasterModel
 
 
 class TestObservationAndActionSpaces:
-    """Tests for DroneSearchEnv observation and action space definitions."""
+    """
+    Tests for DroneSearchEnv observation and action space definitions.
+    """
 
     def setup_method(self):
         self.env = DroneSearchEnv(hazard_rate="medium")
@@ -29,7 +33,9 @@ class TestObservationAndActionSpaces:
 
 
 class TestReset:
-    """Tests for DroneSearchEnv.reset()."""
+    """
+    Tests for DroneSearchEnv.reset().
+    """
 
     def setup_method(self):
         self.env = DroneSearchEnv(hazard_rate="medium")
@@ -60,7 +66,9 @@ class TestReset:
 
 
 class TestStep:
-    """Tests for DroneSearchEnv.step()."""
+    """
+    Tests for DroneSearchEnv.step().
+    """
 
     def setup_method(self):
         self.env = DroneSearchEnv(hazard_rate="slow")
@@ -102,7 +110,9 @@ class TestStep:
 
 
 class TestRewardStructure:
-    """Tests for DroneSearchEnv reward signals."""
+    """
+    Tests for DroneSearchEnv reward signals.
+    """
 
     def test_new_cell_visited_gives_small_positive_reward(self):
         env = DroneSearchEnv(hazard_rate="slow")
@@ -135,7 +145,9 @@ class TestRewardStructure:
 
 
 class TestEpisodeTermination:
-    """Tests for DroneSearchEnv episode termination conditions."""
+    """
+    Tests for DroneSearchEnv episode termination conditions.
+    """
 
     def test_episode_terminates_eventually(self):
         env = DroneSearchEnv(hazard_rate="medium")
@@ -159,7 +171,9 @@ class TestEpisodeTermination:
 
 
 class TestRLDroneIntegration:
-    """Tests for RLDrone within DisasterModel."""
+    """
+    Tests for RLDrone within DisasterModel.
+    """
 
     def test_rl_strategy_creates_rl_drone(self):
         model = DisasterModel(

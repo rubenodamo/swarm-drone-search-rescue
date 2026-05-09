@@ -3,10 +3,7 @@ from src.agents.base_drone import DroneAgent
 
 class ScoutDrone(DroneAgent):
     """
-    Wide-radius scout that detects survivors and adds them to the rescue queue.
-
-    Does NOT rescue survivors and does NOT increment survivors_found_count.
-    Uses pheromone-based movement to maximise coverage.
+    ScoutDrone: A drone specialised in exploring the environment and detecting survivors.
 
     Attributes:
         - alive: Whether the agent is currently active.
@@ -27,9 +24,6 @@ class ScoutDrone(DroneAgent):
     def _detect_and_queue_survivors(self) -> None:
         """
         Detect survivors within sensing radius and add new ones to rescue_queue.
-
-        Sets survivor.detected=True and appends to model.rescue_queue.
-        Does not mark survivor.found or increment survivors_found_count.
         """
         noise = self.model.survivor_detection_noise
         x, y = self.pos

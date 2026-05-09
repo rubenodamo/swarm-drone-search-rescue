@@ -19,7 +19,9 @@ def noise_df() -> pd.DataFrame:
 
 
 class TestNoiseCSV:
-    """Tests for results/noise_runs.csv structure."""
+    """
+    Tests for results/noise_runs.csv structure.
+    """
 
     def test_csv_has_expected_row_count(self, noise_df: pd.DataFrame):
         assert len(noise_df) == len(STRATEGIES) * len(NOISE_LEVELS) * 30
@@ -32,7 +34,9 @@ class TestNoiseCSV:
 
 
 class TestNoiseCharts:
-    """Tests for plot_survivors_vs_noise() and plot_agents_lost_vs_noise()."""
+    """
+    Tests for plot_survivors_vs_noise() and plot_agents_lost_vs_noise().
+    """
 
     def test_survivors_figure_exists_and_is_large_enough(
         self, noise_df: pd.DataFrame, tmp_path: pytest.TempPathFactory

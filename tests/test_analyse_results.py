@@ -29,7 +29,9 @@ def all_runs() -> pd.DataFrame:
 
 
 class TestPlotSurvivorsByStrategy:
-    """Tests for plot_survivors_by_strategy()."""
+    """
+    Tests for plot_survivors_by_strategy().
+    """
 
     def test_figure_file_exists_and_is_large_enough(
         self, summary: pd.DataFrame, tmp_path: pytest.TempPathFactory
@@ -49,7 +51,9 @@ class TestPlotSurvivorsByStrategy:
 
 
 class TestPlotCoverageVsHazardRate:
-    """Tests for plot_coverage_vs_hazard_rate()."""
+    """
+    Tests for plot_coverage_vs_hazard_rate().
+    """
 
     def test_figure_file_exists_and_is_large_enough(
         self, summary: pd.DataFrame, tmp_path: pytest.TempPathFactory
@@ -69,7 +73,9 @@ class TestPlotCoverageVsHazardRate:
 
 
 class TestPlotAgentLossesBoxplot:
-    """Tests for plot_agent_losses_boxplot()."""
+    """
+    Tests for plot_agent_losses_boxplot().
+    """
 
     def test_figure_file_exists_and_is_large_enough(
         self, all_runs: pd.DataFrame, tmp_path: pytest.TempPathFactory
@@ -89,7 +95,9 @@ class TestPlotAgentLossesBoxplot:
 
 
 class TestPlotSurvivorsOverTime:
-    """Tests for plot_survivors_over_time()."""
+    """
+    Tests for plot_survivors_over_time().
+    """
 
     def test_figure_file_exists_and_is_large_enough(
         self, tmp_path: pytest.TempPathFactory
@@ -110,7 +118,9 @@ class TestPlotSurvivorsOverTime:
 
 
 class TestPlotCoverageHeatmaps:
-    """Tests for plot_coverage_heatmaps()."""
+    """
+    Tests for plot_coverage_heatmaps().
+    """
 
     def test_all_three_figures_exist_and_are_large_enough(
         self, tmp_path: pytest.TempPathFactory

@@ -8,7 +8,9 @@ from src.model.disaster_model import DisasterModel
 
 
 class _StubAgent(mesa.Agent):
-    """Minimal agent for use in model tests."""
+    """
+    Minimal agent for use in model tests.
+    """
 
     def step(self) -> None:
         pass
@@ -28,7 +30,9 @@ def _place_stub(model: DisasterModel, pos: tuple[int, int]) -> _StubAgent:
 
 
 class TestAgentDeaths:
-    """Tests for DisasterModel.check_agent_deaths()."""
+    """
+    Tests for DisasterModel.check_agent_deaths().
+    """
 
     def test_agent_on_fire_cell_is_removed(self):
         model = _make_model()
@@ -79,7 +83,9 @@ class TestAgentDeaths:
 
 
 class TestDisasterModelInit:
-    """Tests for DisasterModel.__init__() agent placement."""
+    """
+    Tests for DisasterModel.__init__() agent placement.
+    """
 
     def test_agent_count_matches_swarm_size(self):
         model = DisasterModel(
@@ -111,7 +117,9 @@ class TestDisasterModelInit:
 
 
 class TestTermination:
-    """Tests for DisasterModel.is_done and termination_reason."""
+    """
+    Tests for DisasterModel.is_done and termination_reason.
+    """
 
     def test_not_done_at_start(self):
         model = DisasterModel(
@@ -156,7 +164,9 @@ class TestTermination:
 
 
 class TestPheromoneGrid:
-    """Tests for DisasterModel pheromone grid initialisation and evaporation."""
+    """
+    Tests for DisasterModel pheromone grid initialisation and evaporation.
+    """
 
     def test_pheromone_grid_initialised_to_zeros(self):
         model = DisasterModel(
@@ -187,7 +197,9 @@ class TestPheromoneGrid:
 
 
 class TestPheromoneStrategySmoke:
-    """Tests for DisasterModel full run with pheromone strategy."""
+    """
+    Tests for DisasterModel full run with pheromone strategy.
+    """
 
     def test_run_completes_without_error(self):
         model = DisasterModel(
@@ -216,7 +228,9 @@ class TestPheromoneStrategySmoke:
 
 
 class TestSingleRunTiming:
-    """Tests for single worst-case run timing benchmark."""
+    """
+    Tests for single worst-case run timing benchmark.
+    """
 
     def test_worst_case_run_under_3_seconds(self):
         model = DisasterModel(
@@ -230,7 +244,9 @@ class TestSingleRunTiming:
 
 
 class TestRandomStrategySmoke:
-    """Tests for DisasterModel full run with random strategy."""
+    """
+    Tests for DisasterModel full run with random strategy.
+    """
 
     def test_run_completes_and_metrics_in_valid_range(self):
         model = DisasterModel(
@@ -248,7 +264,9 @@ class TestRandomStrategySmoke:
 
 
 class TestAStarStrategySmoke:
-    """Tests for DisasterModel full run with astar strategy."""
+    """
+    Tests for DisasterModel full run with astar strategy.
+    """
 
     def test_run_completes_and_metrics_in_valid_range(self):
         model = DisasterModel(

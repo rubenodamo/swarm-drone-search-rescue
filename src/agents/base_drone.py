@@ -79,10 +79,6 @@ class DroneAgent(mesa.Agent):
         """
         Returns neighbours the drone believes are safe to move to.
 
-        Truly passable neighbours are always included. Each adjacent FIRE cell
-        is included with probability model.hazard_detection_noise — the drone
-        fails to perceive it as fire.
-
         Args:
             - pos: The (x, y) position to query neighbours for.
 
@@ -109,10 +105,6 @@ class DroneAgent(mesa.Agent):
     def detect_survivors(self) -> None:
         """
         Finds and marks as found any survivors within sensing_radius.
-
-        Each in-range survivor is missed with probability
-        model.survivor_detection_noise (false negative). Finding a survivor
-        adds self._survivor_bonus to survivors_found_count.
         """
         noise = self.model.survivor_detection_noise
         x, y = self.pos
@@ -130,16 +122,11 @@ class DroneAgent(mesa.Agent):
         """
         Moves the agent to a new position, raising only if the target is an obstacle.
 
-        A drone may move onto a FIRE cell when hazard_detection_noise causes
-        it to misperceive the cell; death is handled by check_agent_deaths().
-
         Args:
             - new_pos: The target (x, y) position.
         """
         if self.model.disaster_grid.grid_state[new_pos] == CellType.OBSTACLE:
-            raise ValueError(
-                f"Cannot move to {new_pos}: cell is an obstacle"
-            )
+            raise ValueError(f"Cannot move to {new_pos}: cell is an obstacle")
         self.model.disaster_grid.grid.move_agent(self, new_pos)
         self.mark_visited(new_pos)
 

@@ -7,11 +7,7 @@ from src.strategies.astar import astar
 
 class MedicDrone(DroneAgent):
     """
-    Rescue specialist that navigates to detected survivors and rescues them.
-
-    Assigned exclusively to the nearest unassigned queued survivor via A*.
-    Falls back to pheromone movement every 2 steps when the rescue queue
-    is empty.
+    MedicDrone: A drone specialised in rescuing survivors by navigating to them and marking them as found.
 
     Attributes:
         - alive: Whether the agent is currently active.
@@ -36,7 +32,9 @@ class MedicDrone(DroneAgent):
         self._idle_step: int = 0
 
     def _assigned_survivor_ids(self) -> set[int]:
-        """Return id() of survivors currently assigned to other medics."""
+        """
+        Return id() of survivors currently assigned to other medics.
+        """
         assigned: set[int] = set()
         for agent in self.model.agents:
             if (
@@ -82,10 +80,7 @@ class MedicDrone(DroneAgent):
 
     def detect_survivors(self) -> None:
         """
-        Rescue any survivors within sensing_radius: mark found, increment count,
-        remove from rescue_queue, and clear target if it was the found survivor.
-
-        Skips survivors on FIRE cells (already lost to the environment).
+        Detects survivors within sensing_radius and marks them as found.
         """
         noise = self.model.survivor_detection_noise
         x, y = self.pos
@@ -108,7 +103,9 @@ class MedicDrone(DroneAgent):
                     self._current_path = []
 
     def _pheromone_move(self) -> None:
-        """Execute one pheromone-based movement step."""
+        """
+        Execute one pheromone-based movement step.
+        """
         self.model.pheromone_grid[self.pos] += 1.0
         neighbours = self.get_perceived_neighbours(self.pos)
         if neighbours:
@@ -121,16 +118,12 @@ class MedicDrone(DroneAgent):
 
     def step(self) -> None:
         """
-        Executes one simulation step.
-
-        Priority order:
-        1. If assigned target left queue (fire), clear assignment.
-        2. Assign to nearest queued survivor if idle.
-        3. Navigate toward target (skip movement if already on target cell).
-        4. Fallback: pheromone move every 2 idle steps.
-        5. Rescue any survivors within sensing_radius (detect_survivors).
+        Executes one simulation step for the medic drone.
         """
-        if self.target is not None and self.target not in self.model.rescue_queue:
+        if (
+            self.target is not None
+            and self.target not in self.model.rescue_queue
+        ):
             self.target = None
             self._current_path = []
 

@@ -16,7 +16,12 @@ from src.agents.scout_drone import ScoutDrone
 from src.environment.grid import CellType
 from src.model.disaster_model import DisasterModel
 
-_RL_MODEL_PATH = Path(__file__).parent.parent / "results" / "rl_model" / "ppo_drone_search.zip"
+_RL_MODEL_PATH = (
+    Path(__file__).parent.parent
+    / "results"
+    / "rl_model"
+    / "ppo_drone_search.zip"
+)
 _PHEROMONE_MAX: float = 20.0
 
 CELL_SIZE = 28
@@ -91,7 +96,9 @@ class PlaygroundApp:
         self._drone_ovals: dict[int, int] = {}
         self._drone_trails: dict[int, int] = {}
         self._drone_trail_pos: dict[int, deque[tuple[float, float]]] = {}
-        self._drone_interp: dict[int, tuple[float, float, float, float, float]] = {}
+        self._drone_interp: dict[
+            int, tuple[float, float, float, float, float]
+        ] = {}
         self._drone_heading: dict[int, float] = {}
 
         self._ppo_model: PPO | None = None
@@ -130,62 +137,104 @@ class PlaygroundApp:
         self._render_loop()
 
     def _build_left_panel(self) -> None:
-        """Create the left control panel with Parameters and Controls sections."""
+        """
+        Create the left control panel with Parameters and Controls sections.
+        """
         panel = tk.Frame(self.root, padx=8, pady=8)
         panel.pack(side=tk.LEFT, fill=tk.Y)
 
         params = tk.LabelFrame(panel, text="Parameters", padx=6, pady=6)
         params.pack(fill=tk.X, pady=(0, 8))
 
-        self._add_option_row(params, 0, "Strategy", self._strategy_var,
-                             ["random", "astar", "pheromone", "heterogeneous", "rl"])
-        self._add_option_row(params, 1, "Swarm size", self._swarm_var,
-                             ["1", "3", "6", "12"])
-        self._add_option_row(params, 2, "Hazard rate", self._hazard_var,
-                             ["slow", "medium", "fast"])
-        self._add_option_row(params, 3, "Survivor noise", self._survivor_noise_var,
-                             ["0.0", "0.05", "0.10", "0.20"])
-        self._add_option_row(params, 4, "Hazard noise", self._hazard_noise_var,
-                             ["0.0", "0.05", "0.10", "0.20"])
+        self._add_option_row(
+            params,
+            0,
+            "Strategy",
+            self._strategy_var,
+            ["random", "astar", "pheromone", "heterogeneous", "rl"],
+        )
+        self._add_option_row(
+            params, 1, "Swarm size", self._swarm_var, ["1", "3", "6", "12"]
+        )
+        self._add_option_row(
+            params,
+            2,
+            "Hazard rate",
+            self._hazard_var,
+            ["slow", "medium", "fast"],
+        )
+        self._add_option_row(
+            params,
+            3,
+            "Survivor noise",
+            self._survivor_noise_var,
+            ["0.0", "0.05", "0.10", "0.20"],
+        )
+        self._add_option_row(
+            params,
+            4,
+            "Hazard noise",
+            self._hazard_noise_var,
+            ["0.0", "0.05", "0.10", "0.20"],
+        )
 
         tk.Label(params, text="Seed", anchor="w").grid(
-            row=5, column=0, sticky="w", pady=2)
-        tk.Scale(params, from_=0, to=29, orient=tk.HORIZONTAL,
-                 variable=self._seed_var, length=140).grid(
-            row=5, column=1, sticky="ew", pady=2)
+            row=5, column=0, sticky="w", pady=2
+        )
+        tk.Scale(
+            params,
+            from_=0,
+            to=29,
+            orient=tk.HORIZONTAL,
+            variable=self._seed_var,
+            length=140,
+        ).grid(row=5, column=1, sticky="ew", pady=2)
 
         tk.Label(params, text="Speed", anchor="w").grid(
-            row=6, column=0, sticky="w", pady=2)
-        tk.Scale(params, from_=1, to=10, orient=tk.HORIZONTAL,
-                 variable=self._speed_var, length=140,
-                 command=self._on_speed_change).grid(
-            row=6, column=1, sticky="ew", pady=2)
+            row=6, column=0, sticky="w", pady=2
+        )
+        tk.Scale(
+            params,
+            from_=1,
+            to=10,
+            orient=tk.HORIZONTAL,
+            variable=self._speed_var,
+            length=140,
+            command=self._on_speed_change,
+        ).grid(row=6, column=1, sticky="ew", pady=2)
 
         controls = tk.LabelFrame(panel, text="Controls", padx=6, pady=6)
         controls.pack(fill=tk.X, pady=(0, 8))
 
         self._play_pause_btn = tk.Button(
-            controls, text="Pause", width=12, command=self._toggle_running)
+            controls, text="Pause", width=12, command=self._toggle_running
+        )
         self._play_pause_btn.pack(fill=tk.X, pady=2)
 
-        tk.Button(controls, text="Step", width=12,
-                  command=self._step_once).pack(fill=tk.X, pady=2)
-        tk.Button(controls, text="Reset", width=12,
-                  command=self._reset).pack(fill=tk.X, pady=2)
+        tk.Button(
+            controls, text="Step", width=12, command=self._step_once
+        ).pack(fill=tk.X, pady=2)
+        tk.Button(controls, text="Reset", width=12, command=self._reset).pack(
+            fill=tk.X, pady=2
+        )
 
         metrics = tk.LabelFrame(panel, text="Metrics", padx=6, pady=6)
         metrics.pack(fill=tk.X, pady=(0, 8))
 
-        for row, (label, var) in enumerate([
-            ("Timestep", self._metric_timestep),
-            ("Survivors", self._metric_survivors),
-            ("Agents alive", self._metric_agents),
-            ("Status", self._metric_status),
-        ]):
+        for row, (label, var) in enumerate(
+            [
+                ("Timestep", self._metric_timestep),
+                ("Survivors", self._metric_survivors),
+                ("Agents alive", self._metric_agents),
+                ("Status", self._metric_status),
+            ]
+        ):
             tk.Label(metrics, text=label, anchor="w").grid(
-                row=row, column=0, sticky="w", pady=1)
+                row=row, column=0, sticky="w", pady=1
+            )
             tk.Label(metrics, textvariable=var, anchor="w").grid(
-                row=row, column=1, sticky="w", padx=(6, 0), pady=1)
+                row=row, column=1, sticky="w", padx=(6, 0), pady=1
+            )
 
         self._build_legend(panel)
 
@@ -198,7 +247,7 @@ class PlaygroundApp:
         options: list[str],
     ) -> None:
         """
-        Add a label + OptionMenu row to a grid-managed parent widget.
+        Add a labeled OptionMenu row to the given parent widget.
 
         Args:
             - parent: The parent widget using grid layout.
@@ -208,12 +257,19 @@ class PlaygroundApp:
             - options: List of option strings.
         """
         tk.Label(parent, text=label, anchor="w").grid(
-            row=row, column=0, sticky="w", pady=2)
+            row=row, column=0, sticky="w", pady=2
+        )
         tk.OptionMenu(parent, var, *options).grid(
-            row=row, column=1, sticky="ew", pady=2)
+            row=row, column=1, sticky="ew", pady=2
+        )
 
     def _build_legend(self, panel: tk.Frame) -> None:
-        """Add a Legend LabelFrame with coloured swatches for all cell/drone types."""
+        """
+        Add a Legend LabelFrame with coloured swatches for all cell/drone types.
+
+        Args:
+            - panel: The parent Frame to add the legend to.
+        """
         legend = tk.LabelFrame(panel, text="Legend", padx=6, pady=4)
         legend.pack(fill=tk.X)
 
@@ -235,24 +291,39 @@ class PlaygroundApp:
             col_offset = 0 if i < split else 5
             row = i if i < split else i - split
             swatch = tk.Canvas(
-                legend, width=12, height=12, highlightthickness=0,
+                legend,
+                width=12,
+                height=12,
+                highlightthickness=0,
             )
             swatch.grid(
-                row=row, column=col_offset,
-                padx=(8 if col_offset else 0, 4), pady=1, sticky="w",
+                row=row,
+                column=col_offset,
+                padx=(8 if col_offset else 0, 4),
+                pady=1,
+                sticky="w",
             )
             if is_star:
                 swatch.create_text(
-                    6, 6, text="★", fill=colour, font=("Arial", 8, "bold"),
+                    6,
+                    6,
+                    text="★",
+                    fill=colour,
+                    font=("Arial", 8, "bold"),
                 )
             else:
                 swatch.create_rectangle(0, 0, 12, 12, fill=colour, outline="")
             tk.Label(legend, text=label, anchor="w", font=("Arial", 8)).grid(
-                row=row, column=col_offset + 1, sticky="w", pady=1,
+                row=row,
+                column=col_offset + 1,
+                sticky="w",
+                pady=1,
             )
 
     def _build_canvas(self) -> None:
-        """Create the canvas widget and draw the initial grid and survivors."""
+        """
+        Create the canvas widget and draw the initial grid and survivors.
+        """
         grid = self.model.disaster_grid
         canvas_w = grid.width * CELL_SIZE + 2 * PADDING
         canvas_h = grid.height * CELL_SIZE + 2 * PADDING
@@ -271,8 +342,10 @@ class PlaygroundApp:
                 cx, cy = self._cell_topleft(x, y)
                 colour = _CELL_COLOURS[int(grid.grid_state[x, y])]
                 self.canvas.create_rectangle(
-                    cx, cy,
-                    cx + CELL_SIZE, cy + CELL_SIZE,
+                    cx,
+                    cy,
+                    cx + CELL_SIZE,
+                    cy + CELL_SIZE,
                     fill=colour,
                     outline="#AAAAAA",
                     width=1,
@@ -300,7 +373,9 @@ class PlaygroundApp:
         return STRATEGY_COLOURS[self.model.strategy]
 
     def _init_drones(self) -> None:
-        """Create trail line + chevron polygon canvas items for all agents."""
+        """
+        Initialise drone agents in the model and create corresponding canvas items.
+        """
         now_ms = time.monotonic() * 1000
         default_heading = -math.pi / 2
 
@@ -310,15 +385,24 @@ class PlaygroundApp:
             trail_colour = _lighten(colour)
             px, py = self._cell_centre(*agent.pos)
             trail_id = self.canvas.create_line(
-                px, py, px, py,
-                fill=trail_colour, width=2, capstyle=tk.ROUND, joinstyle=tk.ROUND,
+                px,
+                py,
+                px,
+                py,
+                fill=trail_colour,
+                width=2,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
             )
             self._drone_trails[agent.unique_id] = trail_id
             self._drone_trail_pos[agent.unique_id] = deque(maxlen=3)
 
             coords = self._chevron_coords(px, py, DRONE_RADIUS, default_heading)
             poly_id = self.canvas.create_polygon(
-                *coords, fill=colour, outline=outline, width=2,
+                *coords,
+                fill=colour,
+                outline=outline,
+                width=2,
             )
             self._drone_ovals[agent.unique_id] = poly_id
             self._drone_interp[agent.unique_id] = (px, py, px, py, now_ms)
@@ -366,15 +450,15 @@ class PlaygroundApp:
             - cx: Canvas x of centroid.
             - cy: Canvas y of centroid.
             - r: Radius (half-size) of the chevron.
-            - theta: Heading angle in radians (canvas coords; 0=right, -π/2=up).
+            - theta: Heading angle in radians (canvas coords; 0=right, -pi/2=up).
 
         Returns:
             - Flat list of eight floats for canvas.create_polygon / canvas.coords.
         """
         pts = [
-            (r * 0.9,   0.0),        # tip
-            (-r * 0.45, r * 0.62),   # back-right wing
-            (r * 0.1,   0.0),        # back notch (concave centre)
+            (r * 0.9, 0.0),  # tip
+            (-r * 0.45, r * 0.62),  # back-right wing
+            (r * 0.1, 0.0),  # back notch (concave centre)
             (-r * 0.45, -r * 0.62),  # back-left wing
         ]
         cos_t = math.cos(theta)
@@ -405,7 +489,6 @@ class PlaygroundApp:
     def update_cells(self) -> None:
         """
         Refresh cell colours and survivor stars via canvas.itemconfig().
-        No full redraw — only itemconfig calls.
         """
         grid = self.model.disaster_grid
 
@@ -421,12 +504,16 @@ class PlaygroundApp:
                 self.root.after(400, lambda i=item_id: self.canvas.delete(i))
 
     def _schedule_sim(self) -> None:
-        """Schedule the next sim step if running and model is not done."""
+        """
+        Schedule the next sim step if running and model is not done.
+        """
         if self.running and not self.model.is_done:
             self.root.after(int(self._step_duration_ms), self._sim_step)
 
     def _sim_step(self) -> None:
-        """Scheduled sim loop callback — bails if no longer running."""
+        """
+        Scheduled sim loop callback - exits if no longer running.
+        """
         if not self.running:
             return
         self._do_step()
@@ -457,15 +544,21 @@ class PlaygroundApp:
                 nx, ny = cx + dx, cy + dy
                 if 0 <= nx < width and 0 <= ny < height:
                     obs[0, di, dj] = grid_state[nx, ny] / 2.0
-                    obs[1, di, dj] = min(pheromone[nx, ny] / _PHEROMONE_MAX, 1.0)
-                    obs[2, di, dj] = 1.0 if (nx, ny) in survivor_positions else 0.0
+                    obs[1, di, dj] = min(
+                        pheromone[nx, ny] / _PHEROMONE_MAX, 1.0
+                    )
+                    obs[2, di, dj] = (
+                        1.0 if (nx, ny) in survivor_positions else 0.0
+                    )
                     obs[3, di, dj] = 1.0 if (nx, ny) in visited else 0.0
                 else:
                     obs[0, di, dj] = 0.5
         return obs.flatten()
 
     def _set_rl_action(self) -> None:
-        """Predict and assign the next action for the RL drone before model.step()."""
+        """
+        Predict and assign the next action for the RL drone before model.step().
+        """
         agents = list(self.model.agents)
         if not agents or self._ppo_model is None:
             return
@@ -475,7 +568,9 @@ class PlaygroundApp:
         drone.pending_action = int(action)
 
     def _do_step(self) -> None:
-        """Execute one model step and update the canvas."""
+        """
+        Execute one model step and update the canvas.
+        """
         if self.model.is_done:
             return
 
@@ -521,8 +616,7 @@ class PlaygroundApp:
 
     def _update_pheromone_overlay(self) -> None:
         """
-        Blend passable cell colours toward purple based on pheromone intensity.
-        Only active when strategy is pheromone; skips cells with zero pheromone.
+        Update the cell fill colours to overlay pheromone intensity for relevant strategies.
         """
         if self.model.strategy not in ("pheromone", "heterogeneous"):
             return
@@ -550,12 +644,18 @@ class PlaygroundApp:
                 )
 
     def _render_loop(self) -> None:
-        """Reposition drone chevrons and update pheromone overlay at ~60fps."""
+        """
+        Reposition drone chevrons and update pheromone overlay at ~60fps.
+        """
         now_ms = time.monotonic() * 1000
 
-        for uid, (old_px, old_py, new_px, new_py, start_ms) in (
-            self._drone_interp.items()
-        ):
+        for uid, (
+            old_px,
+            old_py,
+            new_px,
+            new_py,
+            start_ms,
+        ) in self._drone_interp.items():
             if uid not in self._drone_ovals:
                 continue
             t = min(1.0, (now_ms - start_ms) / self._step_duration_ms)
@@ -575,13 +675,17 @@ class PlaygroundApp:
         self.root.after(16, self._render_loop)
 
     def _update_metrics(self) -> None:
-        """Refresh the live metrics StringVars from current model state."""
+        """
+        Refresh the live metrics (timestep, survivors found, agents alive, status) from the model state.
+        """
         m = self.model
         total_survivors = len(m.disaster_grid.survivors)
         agents_alive = len(list(m.agents))
 
         self._metric_timestep.set(str(m.timestep))
-        self._metric_survivors.set(f"{m.survivors_found_count} / {total_survivors}")
+        self._metric_survivors.set(
+            f"{m.survivors_found_count} / {total_survivors}"
+        )
         self._metric_agents.set(f"{agents_alive} / {m.swarm_size}")
 
         if m.is_done:
@@ -593,7 +697,9 @@ class PlaygroundApp:
         self._metric_status.set(status)
 
     def _toggle_running(self) -> None:
-        """Toggle the simulation loop and update the Play/Pause button label."""
+        """
+        Toggle the simulation loop and update the Play/Pause button label.
+        """
         self.running = not self.running
         self._update_play_pause_label()
         self._update_metrics()
@@ -601,11 +707,15 @@ class PlaygroundApp:
             self._schedule_sim()
 
     def _step_once(self) -> None:
-        """Advance the model exactly one step regardless of running state."""
+        """
+        Advance the model exactly one step regardless of running state.
+        """
         self._do_step()
 
     def _reset(self) -> None:
-        """Reinitialise the model from current widget values and redraw canvas."""
+        """
+        Reinitialise the model from current widget values and redraw canvas.
+        """
         self.running = False
 
         for oval_id in self._drone_ovals.values():
@@ -650,16 +760,22 @@ class PlaygroundApp:
         self._schedule_sim()
 
     def _on_speed_change(self, _value: str) -> None:
-        """Update step duration when the Speed scale changes."""
+        """
+        Update step duration when the Speed scale changes.
+        """
         self._step_duration_ms = 1000.0 / self._speed_var.get()
 
     def _update_play_pause_label(self) -> None:
-        """Sync the Play/Pause button text with the current running state."""
+        """
+        Sync the Play/Pause button text with the current running state.
+        """
         self._play_pause_btn.config(text="Pause" if self.running else "Play")
 
 
 def main() -> None:
-    """Launch the playground window."""
+    """
+    Launch the playground window.
+    """
     root = tk.Tk()
     PlaygroundApp(root)
     root.mainloop()

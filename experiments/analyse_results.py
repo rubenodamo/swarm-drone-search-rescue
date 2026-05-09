@@ -87,7 +87,7 @@ def compute_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 def run_significance_tests(df: pd.DataFrame) -> None:
     """
-    Runs Kruskal-Wallis omnibus tests then pairwise Mann-Whitney U post-hoc
+    Runs Kruskal-Wallis group-level tests then pairwise Mann-Whitney U post-hoc
     tests (Bonferroni-corrected) for each metric, and writes results to file.
 
     Args:
@@ -97,7 +97,7 @@ def run_significance_tests(df: pd.DataFrame) -> None:
         "Statistical Significance Tests",
         "=" * 60,
         "",
-        "Step 1: Kruskal-Wallis H-test (omnibus — are any strategies different?)",
+        "Step 1: Kruskal-Wallis H-test (group-level test - are any strategies different?)",
         "Step 2: Pairwise Mann-Whitney U post-hoc tests (only if Step 1 significant)",
         f"Bonferroni-corrected threshold for post-hoc: alpha = {BONFERRONI_ALPHA:.4f}",
         "",
@@ -120,12 +120,12 @@ def run_significance_tests(df: pd.DataFrame) -> None:
         kw_sig = kw_p < 0.05
         kw_verdict = "SIGNIFICANT" if kw_sig else "not significant"
         lines.append(
-            f"  Kruskal-Wallis: H={kw_stat:.2f}, p={kw_p:.4f} — {kw_verdict}"
+            f"  Kruskal-Wallis: H={kw_stat:.2f}, p={kw_p:.4f} - {kw_verdict}"
         )
 
         if not kw_sig:
             lines.append(
-                "  Post-hoc tests skipped (omnibus test not significant)."
+                "  Post-hoc tests skipped (overall test not significant)."
             )
             summary_lines.append(
                 f"{metric}: No significant differences between strategies."
@@ -154,12 +154,12 @@ def run_significance_tests(df: pd.DataFrame) -> None:
                     direction = f" ({higher} is higher)"
                     sig_pairs.append(f"{higher} > {lower}")
             lines.append(
-                f"    {s1} vs {s2}: U={stat:.1f}, p={p:.4f} — {verdict}{direction}"
+                f"    {s1} vs {s2}: U={stat:.1f}, p={p:.4f} - {verdict}{direction}"
             )
 
         if sig_pairs:
             summary_lines.append(
-                f"{metric}: Significant differences — {'; '.join(sig_pairs)}."
+                f"{metric}: Significant differences - {'; '.join(sig_pairs)}."
             )
         else:
             summary_lines.append(
@@ -371,7 +371,13 @@ def plot_survivors_scaling(summary: pd.DataFrame) -> None:
             means = sdf["survivors_found_mean"].values
             stds = sdf["survivors_found_std"].values
             color = STRATEGY_COLORS[s]
-            ax.plot(swarm_sizes, means, marker="o", label=s.capitalize(), color=color)
+            ax.plot(
+                swarm_sizes,
+                means,
+                marker="o",
+                label=s.capitalize(),
+                color=color,
+            )
             ax.fill_between(
                 swarm_sizes,
                 means - stds,
@@ -387,7 +393,9 @@ def plot_survivors_scaling(summary: pd.DataFrame) -> None:
 
     axes[0].set_ylabel("Mean Survivors Found")
     axes[2].legend(title="Strategy")
-    fig.suptitle("Survivors Found vs Swarm Size by Strategy and Hazard Rate", y=1.02)
+    fig.suptitle(
+        "Survivors Found vs Swarm Size by Strategy and Hazard Rate", y=1.02
+    )
 
     fig.tight_layout()
     out = FIGURES_DIR / "survivors_scaling.png"

@@ -19,7 +19,10 @@ HAZARD_RATES = ["slow", "medium", "fast"]
 SEEDS = range(30)
 
 _MODEL_PATH = (
-    Path(__file__).parent.parent / "results" / "rl_model" / "ppo_drone_search.zip"
+    Path(__file__).parent.parent
+    / "results"
+    / "rl_model"
+    / "ppo_drone_search.zip"
 )
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 RL_BASELINE_CSV = RESULTS_DIR / "rl_baseline_runs.csv"
@@ -184,9 +187,7 @@ def run_rl_baseline() -> pd.DataFrame:
     return pd.read_csv(RL_BASELINE_CSV)
 
 
-def plot_rl_baseline(
-    df: pd.DataFrame, figures_dir: Path = FIGURES_DIR
-) -> None:
+def plot_rl_baseline(df: pd.DataFrame, figures_dir: Path = FIGURES_DIR) -> None:
     """
     Generates rl_baseline_comparison.png: survivors_found by strategy and hazard rate.
 
@@ -227,7 +228,7 @@ def plot_rl_baseline(
 
     ax.set_xticks(x)
     ax.set_xticklabels(["Slow hazard", "Medium hazard", "Fast hazard"])
-    ax.set_ylabel("Mean survivors found (±1 SD, 30 seeds)")
+    ax.set_ylabel("Mean survivors found (+/-1 SD, 30 seeds)")
     ax.set_title("Single-agent strategy comparison (swarm_size=1)")
     ax.legend(title="Strategy")
     ax.grid(True, alpha=0.3, axis="y")
