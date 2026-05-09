@@ -15,7 +15,7 @@ class TestObservationAndActionSpaces:
         self.env = DroneSearchEnv(hazard_rate="medium")
 
     def test_observation_space_shape(self):
-        assert self.env.observation_space.shape == (75,)
+        assert self.env.observation_space.shape == (100,)
 
     def test_observation_space_dtype(self):
         assert self.env.observation_space.dtype == np.float32
@@ -36,7 +36,7 @@ class TestReset:
 
     def test_reset_returns_obs_of_correct_shape(self):
         obs, info = self.env.reset(seed=0)
-        assert obs.shape == (75,)
+        assert obs.shape == (100,)
 
     def test_reset_obs_values_in_range(self):
         obs, info = self.env.reset(seed=0)
@@ -72,7 +72,7 @@ class TestStep:
 
     def test_step_obs_shape(self):
         obs, *_ = self.env.step(0)
-        assert obs.shape == (75,)
+        assert obs.shape == (100,)
 
     def test_step_reward_is_float(self):
         _, reward, *_ = self.env.step(0)
@@ -98,7 +98,7 @@ class TestStep:
         for action in range(5):
             self.env.reset(seed=action)
             obs, reward, terminated, truncated, _ = self.env.step(action)
-            assert obs.shape == (75,)
+            assert obs.shape == (100,)
 
 
 class TestRewardStructure:
