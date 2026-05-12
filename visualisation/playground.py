@@ -421,7 +421,6 @@ class PlaygroundApp:
         """
         height = self.model.disaster_grid.height
         canvas_x = PADDING + x * CELL_SIZE
-        # Mesa y=0 is bottom; flip so it renders at the bottom of the canvas.
         canvas_y = PADDING + (height - 1 - y) * CELL_SIZE
         return canvas_x, canvas_y
 

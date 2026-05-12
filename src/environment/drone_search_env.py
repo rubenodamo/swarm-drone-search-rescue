@@ -56,7 +56,6 @@ class DroneSearchEnv(gym.Env):
         self._drone = None
         self._episode_seed: int = -1
 
-        # Episode-level instrumentation counters (reset each episode)
         self._ep_repeated_visits: int = 0
         self._ep_invalid_actions: int = 0
         self._ep_action_counts: dict[int, int] = {i: 0 for i in range(5)}
@@ -66,7 +65,7 @@ class DroneSearchEnv(gym.Env):
         No-op render; this environment has no visual output.
         """
 
-    def reset(  # pylint: disable=arguments-differ
+    def reset(
         self,
         seed: int | None = None,
         options: dict | None = None,
