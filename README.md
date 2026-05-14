@@ -127,6 +127,8 @@ python visualisation/playground.py
 - Survivor and hazard detection noise can be set independently via the left panel
 - When strategy is `rl`, the trained PPO policy is loaded automatically and swarm size is fixed at 1
 
+*See [demo_video.mp4](demo_video.mp4) to see all the different options.*
+
 ## Running Tests
 
 ```bash
